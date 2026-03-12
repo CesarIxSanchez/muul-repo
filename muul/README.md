@@ -28,6 +28,7 @@ muul/
 Implementado en este cambio:
 
 - Componente 1 (Autenticacion, sesion y perfil de usuario): completo.
+- Componente 1 espejado en app web con mismas pantallas, rutas y flujo.
 - Estructura base de monorepo: creada.
 - Paquetes compartidos: inicializados.
 
