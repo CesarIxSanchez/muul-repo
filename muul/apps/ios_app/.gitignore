@@ -27,32 +27,11 @@ migrate_working_dir/
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
-**/.dart_tool/
 .flutter-plugins-dependencies
-.flutter-plugins
 .pub-cache/
 .pub/
 /build/
-**/build/
 /coverage/
-**/coverage/
-**/.packages
-**/.flutter-plugins-dependencies
-**/.metadata
-**/Generated.xcconfig
-**/Flutter/ephemeral/
-**/*.lock
-!pubspec.lock
-!apps/**/pubspec.lock
-!packages/**/pubspec.lock
-.env
-.env.*
-backend/.env
-backend/node_modules/
-backend/dist/
-backend/.turbo/
-backend/.cache/
-backend/coverage/
 
 # Symbolication related
 app.*.symbols
