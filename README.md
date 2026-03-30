@@ -1,59 +1,13 @@
-# Muul Monorepo
+# Muul Repository
 
-Repositorio del proyecto Muul siguiendo la arquitectura definida en el SRS:
+Workspace principal del proyecto en:
 
-- Una aplicacion movil en Flutter.
-- Una aplicacion web en Flutter.
-- Paquetes compartidos para mantener separacion de responsabilidades.
+- `muul/`
 
-## Estructura
+Entrar ahi para desarrollar apps y backend:
 
-```text
-muul/
-	apps/
-		mobile_app/
-		web_app/
-	packages/
-		core/
-		ui/
-		services/
-		data/
-	docs/
-	assets/
-	.github/
-```
-
-## Estado actual
-
-Implementado en este cambio:
-
-- Componente 1 (Autenticacion, sesion y perfil de usuario): completo.
-- Estructura base de monorepo: creada.
-- Paquetes compartidos: inicializados.
-
-No implementado en este cambio:
-
-- Componentes 2, 3, 4 y 5 (solo se dejaron puntos TODO de integracion desde el modulo de autenticacion).
-
-## Ejecutar aplicaciones
-
-Movil:
-
-1. Ir a `apps/mobile_app`
-2. Ejecutar `flutter pub get`
-3. Ejecutar `flutter run`
-
-Web:
-
-1. Ir a `apps/web_app`
-2. Ejecutar `flutter pub get`
-3. Ejecutar `flutter run -d chrome`
-
-## Documentacion de responsabilidades
-
-La asignacion de responsabilidades por persona y entregables se encuentra en:
-
-- `docs/team_responsibilities.md`
+1. `cd muul`
+2. Revisar `muul/README.md`
 
 ## Responsabilidades del equipo
 
