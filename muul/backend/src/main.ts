@@ -1,27 +1,38 @@
-import http from 'node:http';
+import './config/env.js'; // Load & validate env vars first
+import express from 'express';
+import cors from 'cors';
+import { env } from './config/env.js';
+import apiRoutes from './routes/index.js';
+import { errorHandler, notFound } from './middleware/errorHandler.js';
 
-const port = Number(process.env.PORT ?? 8080);
+const app = express();
 
-const server = http.createServer((request, response) => {
-  if (request.url === '/health') {
-    response.writeHead(200, { 'content-type': 'application/json' });
-    response.end(JSON.stringify({ status: 'ok', service: 'muul-backend' }));
-    return;
-  }
+// ─── Global Middleware ────────────────────────────────────────────────────────
+app.use(
+  cors({
+    origin: env.corsOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true }));
 
-  response.writeHead(200, { 'content-type': 'application/json' });
-  response.end(
-    JSON.stringify({
-      message: 'Muul backend bootstrap running',
-      next: [
-        'Implement auth endpoints',
-        'Implement places/business endpoints',
-        'Implement routes and achievements endpoints'
-      ]
-    })
-  );
+// ─── Health ───────────────────────────────────────────────────────────────────
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', service: 'muul-backend', env: env.nodeEnv });
 });
 
-server.listen(port, () => {
-  console.log(`muul-backend listening on ${port}`);
+// ─── API Routes ───────────────────────────────────────────────────────────────
+app.use(env.apiPrefix, apiRoutes);
+
+// ─── 404 / Error Handlers ─────────────────────────────────────────────────────
+app.use(notFound);
+app.use(errorHandler);
+
+// ─── Start ────────────────────────────────────────────────────────────────────
+app.listen(env.port, () => {
+  console.log(`muul-backend listening on port ${env.port} [${env.nodeEnv}]`);
+  console.log(`API prefix: ${env.apiPrefix}`);
 });
