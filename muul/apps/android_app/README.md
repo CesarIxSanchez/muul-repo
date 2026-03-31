@@ -1,4 +1,8 @@
+<<<<<<<< HEAD:muul/apps/android_app/README.md
 # android_app
+========
+# ios_app
+>>>>>>>> 8dfdbb967fa7a81e178b5567ad9faa96d1be0d74:muul/apps/ios_app/README.md
 
 A new Flutter project.
 

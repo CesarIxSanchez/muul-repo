@@ -1,4 +1,9 @@
+<<<<<<< HEAD
+<<<<<<<< HEAD:muul/apps/android_app/pubspec.yaml
 name: android_app
+========
+name: ios_app
+>>>>>>>> 8dfdbb967fa7a81e178b5567ad9faa96d1be0d74:muul/apps/ios_app/pubspec.yaml
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -27,10 +32,21 @@ environment:
 # dependencies can be manually updated by changing the version numbers below to
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
+=======
+name: android_app
+description: "Muul – Tourist app for FIFA World Cup 2026"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+>>>>>>> 8dfdbb967fa7a81e178b5567ad9faa96d1be0d74
 dependencies:
   flutter:
     sdk: flutter
 
+<<<<<<< HEAD
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
@@ -87,3 +103,38 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+=======
+  cupertino_icons: ^1.0.8
+
+  # Mapa
+  mapbox_maps_flutter: ^2.5.0
+
+  # Geolocalización
+  geolocator: ^12.0.0
+  permission_handler: ^11.3.1
+
+  # Backend
+  supabase_flutter: ^2.5.0
+
+  # Estado
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # Utils
+  http: ^1.2.1
+  cached_network_image: ^3.3.1
+  shimmer: ^3.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  riverpod_generator: ^2.4.0
+  build_runner: ^2.4.9
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/
+>>>>>>> 8dfdbb967fa7a81e178b5567ad9faa96d1be0d74
