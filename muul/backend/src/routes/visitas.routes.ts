@@ -5,7 +5,6 @@ import { asyncHandler, createError } from '../middleware/errorHandler.js';
 import { requireAuth } from '../middleware/auth.js';
 import type { AuthRequest } from '../middleware/auth.js';
 
-// Radius in meters to consider a visit as verified GPS-proximity
 const VERIFICACION_RADIO_M = 100;
 
 function haversineMetros(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -29,84 +28,66 @@ router.get(
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { data, error } = await supabase
       .from('visitas')
-      .select('*, pois(nombre, lat, lng), negocios(nombre, lat, lng)')
+      .select('*')
       .eq('usuario_id', req.userId!)
-      .order('created_at', { ascending: false });
+      .order('visitado_en', { ascending: false });
 
     if (error) throw createError(error.message, 500, 'DB_ERROR');
     res.json(data);
   })
 );
 
-// POST /visitas — registrar visita con validación GPS
+// POST /visitas — registrar visita con validación GPS opcional
+// Body: { lugar_id, tipo_lugar: 'poi'|'negocio', coleccion_id?, latitud?, longitud? }
 router.post(
   '/',
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { poi_id, negocio_id, lat, lng } = req.body as {
-      poi_id?: string;
-      negocio_id?: string;
-      lat?: number;
-      lng?: number;
+    const { lugar_id, tipo_lugar, coleccion_id, latitud, longitud } = req.body as {
+      lugar_id: string;
+      tipo_lugar: 'poi' | 'negocio';
+      coleccion_id?: string;
+      latitud?: number;
+      longitud?: number;
     };
 
-    if (!poi_id && !negocio_id) {
-      throw createError('Debe especificar poi_id o negocio_id', 400, 'VALIDATION_ERROR');
+    if (!lugar_id || !tipo_lugar) {
+      throw createError('lugar_id y tipo_lugar son requeridos', 400, 'VALIDATION_ERROR');
+    }
+    if (!['poi', 'negocio'].includes(tipo_lugar)) {
+      throw createError('tipo_lugar debe ser "poi" o "negocio"', 400, 'VALIDATION_ERROR');
     }
 
+    // GPS proximity check when coordinates provided
     let verificada = false;
+    if (latitud !== undefined && longitud !== undefined) {
+      const table = tipo_lugar === 'poi' ? 'pois' : 'negocios';
+      const { data: lugar } = await supabase
+        .from(table)
+        .select('latitud, longitud')
+        .eq('id', lugar_id)
+        .single();
 
-    // GPS proximity check
-    if (lat !== undefined && lng !== undefined) {
-      if (poi_id) {
-        const { data: poi } = await supabase
-          .from('pois')
-          .select('lat, lng')
-          .eq('id', poi_id)
-          .single();
-
-        if (poi) {
-          verificada = haversineMetros(lat, lng, poi.lat, poi.lng) <= VERIFICACION_RADIO_M;
-        }
-      } else if (negocio_id) {
-        const { data: negocio } = await supabase
-          .from('negocios')
-          .select('lat, lng')
-          .eq('id', negocio_id)
-          .single();
-
-        if (negocio) {
-          verificada = haversineMetros(lat, lng, negocio.lat, negocio.lng) <= VERIFICACION_RADIO_M;
-        }
+      if (lugar) {
+        const l = lugar as { latitud: number; longitud: number };
+        verificada = haversineMetros(latitud, longitud, l.latitud, l.longitud) <= VERIFICACION_RADIO_M;
       }
     }
 
     const { data: visita, error } = await supabase
       .from('visitas')
-      .insert({ poi_id, negocio_id, lat, lng, verificada, usuario_id: req.userId! })
+      .insert({ lugar_id, tipo_lugar, coleccion_id, latitud, longitud, usuario_id: req.userId! })
       .select()
       .single();
 
     if (error) throw createError(error.message, 400, 'INSERT_ERROR');
 
-    // If verified, increment user's visit count
-    if (verificada) {
-      // Increment user's visit count via RPC (define this function in Supabase SQL editor)
-      await supabase.rpc('increment_visitas', { p_usuario_id: req.userId! });
-
-      // Also update business stats if applicable
-      if (negocio_id) {
-        const today = new Date().toISOString().slice(0, 10);
-        await supabase.from('negocio_stats').upsert(
-          {
-            negocio_id,
-            fecha: today,
-            vistas: 0,
-            visitas_verificadas: 1,
-            presencia_rutas: 0,
-          },
-          { onConflict: 'negocio_id,fecha' }
-        );
-      }
+    // Update negocio_stats if visiting a negocio and GPS-verified
+    if (verificada && tipo_lugar === 'negocio') {
+      const today = new Date().toISOString().slice(0, 10);
+      await supabase.from('negocio_stats').upsert(
+        { negocio_id: lugar_id, fecha: today, vistas: 0, clicks_ruta: 0, visitas_gps: 1 },
+        { onConflict: 'negocio_id,fecha' }
+      );
     }
 
     res.status(201).json({ ...(visita as object), verificada });

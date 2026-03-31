@@ -7,42 +7,25 @@ import type { AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
-// GET /pois — list with optional category filter
+// GET /pois — con filtros por coleccion y búsqueda
 router.get(
   '/',
   asyncHandler(async (req: Request, res: Response) => {
-    const { categoria, search, limit = '50', offset = '0' } = req.query as Record<string, string>;
+    const { coleccion_id, search, limit = '50', offset = '0' } = req.query as Record<string, string>;
 
     let query = supabase
       .from('pois')
-      .select('*')
+      .select('*, colecciones(nombre, tipo)')
       .eq('activo', true)
       .order('nombre')
       .range(Number(offset), Number(offset) + Number(limit) - 1);
 
-    if (categoria) query = query.eq('categoria', categoria);
+    if (coleccion_id) query = query.eq('coleccion_id', coleccion_id);
     if (search) query = query.ilike('nombre', `%${search}%`);
 
-    const { data, error, count } = await query;
+    const { data, error } = await query;
     if (error) throw createError(error.message, 500, 'DB_ERROR');
-
-    res.json({ data, count });
-  })
-);
-
-// GET /pois/categorias — distinct categories
-router.get(
-  '/categorias',
-  asyncHandler(async (_req: Request, res: Response) => {
-    const { data, error } = await supabase
-      .from('pois')
-      .select('categoria')
-      .eq('activo', true);
-
-    if (error) throw createError(error.message, 500, 'DB_ERROR');
-
-    const unique = [...new Set(data?.map((p) => p.categoria))];
-    res.json(unique);
+    res.json(data);
   })
 );
 
@@ -52,7 +35,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const { data, error } = await supabase
       .from('pois')
-      .select('*')
+      .select('*, colecciones(nombre, tipo)')
       .eq('id', req.params.id)
       .eq('activo', true)
       .single();

@@ -15,7 +15,6 @@ router.get(
       .from('productos')
       .select('*')
       .eq('negocio_id', req.params.negocioId)
-      .eq('disponible', true)
       .order('nombre');
 
     if (error) throw createError(error.message, 500, 'DB_ERROR');
@@ -28,14 +27,17 @@ router.post(
   '/',
   requireAuth,
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    // Verify ownership
     const { data: negocio } = await supabase
       .from('negocios')
       .select('propietario_id')
       .eq('id', req.params.negocioId)
       .single();
 
-    if (!negocio || (negocio.propietario_id !== req.userId && req.userRole !== 'admin')) {
+    if (
+      !negocio ||
+      ((negocio as { propietario_id: string }).propietario_id !== req.userId &&
+        req.userRole !== 'admin')
+    ) {
       throw createError('No tienes permiso', 403, 'FORBIDDEN');
     }
 
@@ -61,7 +63,11 @@ router.patch(
       .eq('id', req.params.negocioId)
       .single();
 
-    if (!negocio || (negocio.propietario_id !== req.userId && req.userRole !== 'admin')) {
+    if (
+      !negocio ||
+      ((negocio as { propietario_id: string }).propietario_id !== req.userId &&
+        req.userRole !== 'admin')
+    ) {
       throw createError('No tienes permiso', 403, 'FORBIDDEN');
     }
 
@@ -89,13 +95,17 @@ router.delete(
       .eq('id', req.params.negocioId)
       .single();
 
-    if (!negocio || (negocio.propietario_id !== req.userId && req.userRole !== 'admin')) {
+    if (
+      !negocio ||
+      ((negocio as { propietario_id: string }).propietario_id !== req.userId &&
+        req.userRole !== 'admin')
+    ) {
       throw createError('No tienes permiso', 403, 'FORBIDDEN');
     }
 
     const { error } = await supabase
       .from('productos')
-      .update({ disponible: false })
+      .delete()
       .eq('id', req.params.id)
       .eq('negocio_id', req.params.negocioId);
 

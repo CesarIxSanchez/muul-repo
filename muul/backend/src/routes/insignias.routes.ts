@@ -13,15 +13,15 @@ router.get(
   asyncHandler(async (_req: Request, res: Response) => {
     const { data, error } = await supabase
       .from('insignias')
-      .select('*')
-      .order('visitas_requeridas');
+      .select('*, colecciones(nombre, tipo)')
+      .order('requisito_visitas');
 
     if (error) throw createError(error.message, 500, 'DB_ERROR');
     res.json(data);
   })
 );
 
-// GET /insignias/usuario/:userId — insignias desbloqueadas de un usuario
+// GET /insignias/usuario/:userId — insignias desbloqueadas
 router.get(
   '/usuario/:userId',
   asyncHandler(async (req: Request, res: Response) => {
@@ -29,7 +29,7 @@ router.get(
       .from('usuario_insignias')
       .select('*, insignias(*)')
       .eq('usuario_id', req.params.userId)
-      .order('desbloqueada_at', { ascending: false });
+      .order('obtenida_en', { ascending: false });
 
     if (error) throw createError(error.message, 500, 'DB_ERROR');
     res.json(data);
@@ -41,43 +41,50 @@ router.post(
   '/check',
   requireAuth,
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    // Get user's total verified visits
-    const { data: perfil, error: perfilErr } = await supabase
-      .from('perfiles')
-      .select('visitas_totales')
-      .eq('usuario_id', req.userId!)
-      .single();
+    // Count verified visits for the user
+    const { count, error: countErr } = await supabase
+      .from('visitas')
+      .select('id', { count: 'exact', head: true })
+      .eq('usuario_id', req.userId!);
 
-    if (perfilErr) throw createError(perfilErr.message, 404, 'NOT_FOUND');
+    if (countErr) throw createError(countErr.message, 500, 'DB_ERROR');
+    const totalVisitas = count ?? 0;
 
-    // Get all insignias not yet unlocked by this user
+    // Get already unlocked
     const { data: yaDesbloqueadas } = await supabase
       .from('usuario_insignias')
       .select('insignia_id')
       .eq('usuario_id', req.userId!);
 
-    const desbloqueadasIds = (yaDesbloqueadas ?? []).map((u) => u.insignia_id);
+    const desbloqueadasIds = (yaDesbloqueadas ?? []).map(
+      (u: { insignia_id: string }) => u.insignia_id
+    );
 
-    const { data: insigniasPendientes, error: insigniasErr } = await supabase
+    // Find eligible insignias not yet unlocked
+    let query = supabase
       .from('insignias')
       .select('*')
-      .lte('visitas_requeridas', perfil.visitas_totales)
-      .not('id', 'in', `(${desbloqueadasIds.length > 0 ? desbloqueadasIds.join(',') : 'null'})`);
+      .lte('requisito_visitas', totalVisitas);
 
+    if (desbloqueadasIds.length > 0) {
+      query = query.not('id', 'in', `(${desbloqueadasIds.join(',')})`);
+    }
+
+    const { data: nuevasInsignias, error: insigniasErr } = await query;
     if (insigniasErr) throw createError(insigniasErr.message, 500, 'DB_ERROR');
 
-    if (!insigniasPendientes?.length) {
+    if (!nuevasInsignias?.length) {
       return res.json({ nuevas: [] });
     }
 
-    const nuevasRows = insigniasPendientes.map((i) => ({
+    const rows = nuevasInsignias.map((i: { id: string }) => ({
       usuario_id: req.userId!,
       insignia_id: i.id,
     }));
 
     const { data: nuevas, error: insertErr } = await supabase
       .from('usuario_insignias')
-      .insert(nuevasRows)
+      .insert(rows)
       .select('*, insignias(*)');
 
     if (insertErr) throw createError(insertErr.message, 500, 'INSERT_ERROR');
@@ -93,7 +100,7 @@ router.post(
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { data, error } = await supabase
       .from('insignias')
-      .insert(req.body as { nombre: string; descripcion: string; icono: string; nivel: string; visitas_requeridas: number })
+      .insert(req.body)
       .select()
       .single();
 

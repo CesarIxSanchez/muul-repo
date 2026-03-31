@@ -1,8 +1,16 @@
 // ─── Entity interfaces ────────────────────────────────────────────────────────
-// These mirror the public schema in Supabase (MuulTests project).
-// Use these for typing query results in route handlers.
+// Generated from the actual Supabase public schema (MuulTests project).
 
 export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
+
+// Colecciones = categories/taxonomies for POIs and negocios
+export interface Coleccion {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  tipo: string;       // e.g. 'gastronomia', 'cultural', 'naturaleza'
+  activa: boolean;
+}
 
 export interface Amenidad {
   id: string;
@@ -10,20 +18,13 @@ export interface Amenidad {
   icono: string;
 }
 
-export interface Coleccion {
-  id: string;
-  usuario_id: string;
-  poi_id: string;
-  created_at: string;
-}
-
 export interface Insignia {
   id: string;
+  coleccion_id: string | null;
   nombre: string;
-  descripcion: string;
-  icono: string;
-  nivel: 'bronce' | 'plata' | 'oro' | 'platino';
-  visitas_requeridas: number;
+  nivel: string;               // 'bronce' | 'plata' | 'oro' | 'platino'
+  requisito_visitas: number;
+  emoji: string;
 }
 
 export interface NegocioAmenidad {
@@ -34,10 +35,10 @@ export interface NegocioAmenidad {
 export interface NegocioStats {
   id: string;
   negocio_id: string;
-  vistas: number;
-  visitas_verificadas: number;
-  presencia_rutas: number;
   fecha: string;
+  vistas: number;
+  clicks_ruta: number;
+  visitas_gps: number;
 }
 
 export interface Negocio {
@@ -45,45 +46,41 @@ export interface Negocio {
   propietario_id: string;
   nombre: string;
   descripcion: string | null;
-  categoria: string;
-  direccion: string;
-  lat: number;
-  lng: number;
-  telefono: string | null;
-  email: string | null;
-  sitio_web: string | null;
+  coleccion_id: string | null;
+  latitud: number;
+  longitud: number;
   horario: Json | null;
-  imagen_url: string | null;
-  verificado: boolean;
+  foto_url: string | null;
   activo: boolean;
-  created_at: string;
+  vistas: number;
+  creado_en: string;
+  verificado: boolean;
+  calificacion_promedio: number | null;
+  total_resenas: number;
 }
 
 export interface Perfil {
-  id: string;
-  usuario_id: string;
+  id: string;           // same as auth.users.id
   nombre: string;
-  avatar_url: string | null;
-  rol: 'turista' | 'empresa' | 'admin';
+  tipo: 'turista' | 'empresa' | 'admin';
+  foto_url: string | null;
   idioma: 'es' | 'en' | 'zh' | 'pt';
-  pasos_totales: number;
-  calorias_totales: number;
-  visitas_totales: number;
-  created_at: string;
+  pasos_total: number;
+  distancia_km: number;
+  creado_en: string;
 }
 
 export interface Poi {
   id: string;
   nombre: string;
   descripcion: string | null;
-  categoria: string;
-  lat: number;
-  lng: number;
-  imagen_url: string | null;
-  fuente: 'supabase' | 'mapbox';
-  mapbox_id: string | null;
+  coleccion_id: string | null;
+  latitud: number;
+  longitud: number;
+  horario: Json | null;
+  precio_entrada: number | null;
+  contexto_ia: string | null;
   activo: boolean;
-  created_at: string;
 }
 
 export interface Producto {
@@ -92,55 +89,52 @@ export interface Producto {
   nombre: string;
   descripcion: string | null;
   precio: number | null;
-  imagen_url: string | null;
-  disponible: boolean;
-  created_at: string;
+  foto_url: string | null;
 }
 
 export interface RecorridoNodo {
   id: string;
   recorrido_id: string;
-  poi_id: string;
-  orden: number;
-  tiempo_estimado_min: number | null;
+  lugar_id: string;          // poi or negocio id
+  orden_visita: number;
+  tiempo_estimado_seg: number | null;
 }
 
 export interface Recorrido {
   id: string;
   usuario_id: string;
-  nombre: string | null;
-  distancia_km: number | null;
-  duracion_min: number | null;
   pasos: number | null;
-  calorias: number | null;
+  distancia_m: number | null;
+  duracion_seg: number | null;
+  calorias_est: number | null;
   completado: boolean;
-  created_at: string;
+  iniciado_en: string;
+  finalizado_en: string | null;
 }
 
 export interface Resena {
   id: string;
+  negocio_id: string;
   usuario_id: string;
-  poi_id: string | null;
-  negocio_id: string | null;
   calificacion: number;
   comentario: string | null;
-  created_at: string;
+  creado_en: string;
 }
 
 export interface UsuarioInsignia {
   id: string;
   usuario_id: string;
   insignia_id: string;
-  desbloqueada_at: string;
+  obtenida_en: string;
 }
 
 export interface Visita {
   id: string;
   usuario_id: string;
-  poi_id: string | null;
-  negocio_id: string | null;
-  lat: number | null;
-  lng: number | null;
-  verificada: boolean;
-  created_at: string;
+  lugar_id: string;
+  tipo_lugar: 'poi' | 'negocio';
+  coleccion_id: string | null;
+  latitud: number | null;
+  longitud: number | null;
+  visitado_en: string;
 }

@@ -7,19 +7,18 @@ import type { AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
-// GET /resenas?poi_id=&negocio_id=
+// GET /resenas?negocio_id=
 router.get(
   '/',
   asyncHandler(async (req: Request, res: Response) => {
-    const { poi_id, negocio_id, limit = '20', offset = '0' } = req.query as Record<string, string>;
+    const { negocio_id, limit = '20', offset = '0' } = req.query as Record<string, string>;
 
     let query = supabase
       .from('resenas')
-      .select('*, perfiles(nombre, avatar_url)')
-      .order('created_at', { ascending: false })
+      .select('*, perfiles(nombre, foto_url)')
+      .order('creado_en', { ascending: false })
       .range(Number(offset), Number(offset) + Number(limit) - 1);
 
-    if (poi_id) query = query.eq('poi_id', poi_id);
     if (negocio_id) query = query.eq('negocio_id', negocio_id);
 
     const { data, error } = await query;
@@ -33,23 +32,22 @@ router.post(
   '/',
   requireAuth,
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { calificacion, comentario, poi_id, negocio_id } = req.body as {
+    const { calificacion, comentario, negocio_id } = req.body as {
       calificacion: number;
       comentario?: string;
-      poi_id?: string;
-      negocio_id?: string;
+      negocio_id: string;
     };
 
-    if (!poi_id && !negocio_id) {
-      throw createError('Debe especificar poi_id o negocio_id', 400, 'VALIDATION_ERROR');
+    if (!negocio_id) {
+      throw createError('negocio_id es requerido', 400, 'VALIDATION_ERROR');
     }
     if (!calificacion || calificacion < 1 || calificacion > 5) {
-      throw createError('Calificacion debe ser entre 1 y 5', 400, 'VALIDATION_ERROR');
+      throw createError('calificacion debe ser entre 1 y 5', 400, 'VALIDATION_ERROR');
     }
 
     const { data, error } = await supabase
       .from('resenas')
-      .insert({ calificacion, comentario, poi_id, negocio_id, usuario_id: req.userId! })
+      .insert({ calificacion, comentario, negocio_id, usuario_id: req.userId! })
       .select()
       .single();
 
@@ -58,7 +56,7 @@ router.post(
   })
 );
 
-// DELETE /resenas/:id — only owner
+// DELETE /resenas/:id — solo propietario o admin
 router.delete(
   '/:id',
   requireAuth,
@@ -70,7 +68,10 @@ router.delete(
       .single();
 
     if (!resena) throw createError('Reseña no encontrada', 404, 'NOT_FOUND');
-    if (resena.usuario_id !== req.userId && req.userRole !== 'admin') {
+    if (
+      (resena as { usuario_id: string }).usuario_id !== req.userId &&
+      req.userRole !== 'admin'
+    ) {
       throw createError('No tienes permiso', 403, 'FORBIDDEN');
     }
 
