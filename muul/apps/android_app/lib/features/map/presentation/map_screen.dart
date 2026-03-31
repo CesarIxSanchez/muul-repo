@@ -1,15 +1,19 @@
 // lib/features/map/presentation/map_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
-import '../data/route_service.dart';
-import '../domain/models/poi_model.dart';
+
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/theme/tema_provider.dart';
+import '../data/route_service.dart';
+import '../domain/models/poi_model.dart';
 import 'providers/map_provider.dart';
 import 'widgets/map_controls.dart';
+import 'widgets/map_search_bar.dart';
+import 'widgets/filter_chips_bar.dart';
 import 'widgets/poi_bottom_sheet.dart';
 import 'widgets/route_panel.dart';
 import 'widgets/itinerary_panel.dart';
