@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 // This is a basic Flutter widget test.
 //
 // To perform an interaction with a widget in your test, use the WidgetTester
@@ -29,7 +28,6 @@ void main() {
     expect(find.text('1'), findsOneWidget);
   });
 }
-=======
 import 'package:flutter_test/flutter_test.dart';
 import 'package:android_app/main.dart';
 
@@ -39,4 +37,3 @@ void main() {
     expect(find.byType(MuulApp), findsOneWidget);
   });
 }
->>>>>>> 8dfdbb967fa7a81e178b5567ad9faa96d1be0d74

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import 'package:flutter/material.dart';
 
 void main() {
@@ -121,7 +120,6 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
-=======
 // lib/main.dart
 
 import 'package:flutter/material.dart';
@@ -176,4 +174,3 @@ class MuulApp extends StatelessWidget {
     );
   }
 }
->>>>>>> 8dfdbb967fa7a81e178b5567ad9faa96d1be0d74
