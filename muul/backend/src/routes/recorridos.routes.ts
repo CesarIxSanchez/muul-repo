@@ -6,7 +6,6 @@ import { requireAuth } from '../middleware/auth.js';
 import type { AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
-
 router.use(requireAuth);
 
 // GET /recorridos — historial del usuario
@@ -15,9 +14,9 @@ router.get(
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { data, error } = await supabase
       .from('recorridos')
-      .select('*, recorrido_nodos(*, pois(id, nombre, lat, lng))')
+      .select('*, recorrido_nodos(*, pois(id, nombre, latitud, longitud))')
       .eq('usuario_id', req.userId!)
-      .order('created_at', { ascending: false });
+      .order('iniciado_en', { ascending: false });
 
     if (error) throw createError(error.message, 500, 'DB_ERROR');
     res.json(data);
@@ -40,12 +39,13 @@ router.get(
   })
 );
 
-// POST /recorridos — crear nuevo recorrido con sus nodos
+// POST /recorridos — crear recorrido con nodos
+// Body: { nodos: [{lugar_id, orden_visita, tiempo_estimado_seg?}], ...recorrido }
 router.post(
   '/',
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { nodos, ...recorridoBody } = req.body as {
-      nodos?: Array<{ poi_id: string; orden: number; tiempo_estimado_min?: number }>;
+      nodos?: Array<{ lugar_id: string; orden_visita: number; tiempo_estimado_seg?: number }>;
       [key: string]: unknown;
     };
 
@@ -58,7 +58,7 @@ router.post(
     if (error) throw createError(error.message, 400, 'INSERT_ERROR');
 
     if (nodos?.length) {
-      const nodoRows = nodos.map((n) => ({ ...n, recorrido_id: recorrido.id }));
+      const nodoRows = nodos.map((n) => ({ ...n, recorrido_id: (recorrido as { id: string }).id }));
       const { error: nodosErr } = await supabase.from('recorrido_nodos').insert(nodoRows);
       if (nodosErr) throw createError(nodosErr.message, 400, 'INSERT_ERROR');
     }
@@ -67,11 +67,11 @@ router.post(
   })
 );
 
-// PATCH /recorridos/:id — actualizar progreso (pasos, calorías, completado)
+// PATCH /recorridos/:id — actualizar progreso
 router.patch(
   '/:id',
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const allowed = ['pasos', 'calorias', 'distancia_km', 'duracion_min', 'completado'] as const;
+    const allowed = ['pasos', 'distancia_m', 'duracion_seg', 'calorias_est', 'completado', 'finalizado_en'] as const;
     type AllowedKey = (typeof allowed)[number];
     const updates = Object.fromEntries(
       Object.entries(req.body as Record<string, unknown>).filter(([k]) =>
@@ -89,12 +89,13 @@ router.patch(
 
     if (error) throw createError(error.message, 400, 'UPDATE_ERROR');
 
-    // If completed, update user totals via RPC (define in Supabase SQL editor)
+    // On completion update perfil stats
     if (updates.completado) {
+      const rec = data as { pasos: number | null; distancia_m: number | null };
       await supabase.rpc('increment_perfil_stats', {
         p_usuario_id: req.userId!,
-        p_pasos: (data as { pasos: number | null }).pasos ?? 0,
-        p_calorias: (data as { calorias: number | null }).calorias ?? 0,
+        p_pasos: rec.pasos ?? 0,
+        p_distancia_m: rec.distancia_m ?? 0,
       });
     }
 

@@ -11,11 +11,11 @@ const router = Router();
 router.post(
   '/register',
   asyncHandler(async (req: Request, res: Response) => {
-    const { email, password, nombre, rol = 'turista', idioma = 'es' } = req.body as {
+    const { email, password, nombre, tipo = 'turista', idioma = 'es' } = req.body as {
       email: string;
       password: string;
       nombre: string;
-      rol?: string;
+      tipo?: string;
       idioma?: string;
     };
 
@@ -27,26 +27,24 @@ router.post(
       email,
       password,
       email_confirm: true,
-      user_metadata: { nombre, rol, idioma },
+      user_metadata: { nombre, tipo, idioma },
     });
 
     if (authError) {
       throw createError(authError.message, 400, authError.code ?? 'AUTH_ERROR');
     }
 
-    // Create profile row
+    // Create perfil — id = auth user id
     const { error: profileError } = await supabase.from('perfiles').insert({
-      usuario_id: authData.user.id,
+      id: authData.user.id,
       nombre,
-      rol: rol as 'turista' | 'empresa' | 'admin',
-      idioma: idioma as 'es' | 'en' | 'zh' | 'pt',
-      pasos_totales: 0,
-      calorias_totales: 0,
-      visitas_totales: 0,
+      tipo,
+      idioma,
+      pasos_total: 0,
+      distancia_km: 0,
     });
 
     if (profileError) {
-      // Rollback user if profile creation fails
       await supabase.auth.admin.deleteUser(authData.user.id);
       throw createError(profileError.message, 500, 'PROFILE_CREATE_ERROR');
     }
@@ -68,7 +66,7 @@ router.post(
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
-      const statusCode = error.message.includes('Invalid') ? 401 : 400;
+      const statusCode = error.message.toLowerCase().includes('invalid') ? 401 : 400;
       throw createError(error.message, statusCode, error.code ?? 'AUTH_ERROR');
     }
 
@@ -79,7 +77,7 @@ router.post(
       user: {
         id: data.user.id,
         email: data.user.email,
-        rol: data.user.user_metadata.rol,
+        tipo: data.user.user_metadata.tipo,
         idioma: data.user.user_metadata.idioma,
       },
     });
@@ -129,10 +127,10 @@ router.get(
     const { data, error } = await supabase
       .from('perfiles')
       .select('*')
-      .eq('usuario_id', req.userId!)
+      .eq('id', req.userId!)
       .single();
 
-    if (error) throw createError(error.message, 404, 'NOT_FOUND');
+    if (error) throw createError('Perfil no encontrado', 404, 'NOT_FOUND');
     res.json(data);
   })
 );

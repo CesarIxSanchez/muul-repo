@@ -7,7 +7,6 @@ import type { AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
-// All perfil routes require auth
 router.use(requireAuth);
 
 // GET /perfiles/me
@@ -17,7 +16,7 @@ router.get(
     const { data, error } = await supabase
       .from('perfiles')
       .select('*')
-      .eq('usuario_id', req.userId!)
+      .eq('id', req.userId!)
       .single();
 
     if (error) throw createError('Perfil no encontrado', 404, 'NOT_FOUND');
@@ -25,11 +24,11 @@ router.get(
   })
 );
 
-// PATCH /perfiles/me
+// PATCH /perfiles/me — solo campos permitidos
 router.patch(
   '/me',
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const allowed = ['nombre', 'avatar_url', 'idioma'] as const;
+    const allowed = ['nombre', 'foto_url', 'idioma'] as const;
     type AllowedKey = (typeof allowed)[number];
     const updates = Object.fromEntries(
       Object.entries(req.body as Record<string, unknown>).filter(([k]) =>
@@ -44,7 +43,7 @@ router.patch(
     const { data, error } = await supabase
       .from('perfiles')
       .update(updates)
-      .eq('usuario_id', req.userId!)
+      .eq('id', req.userId!)
       .select()
       .single();
 
@@ -53,7 +52,7 @@ router.patch(
   })
 );
 
-// GET /perfiles/me/stats — pasos, calorías, visitas, insignias
+// GET /perfiles/me/stats — pasos, distancia, insignias
 router.get(
   '/me/stats',
   asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -61,8 +60,8 @@ router.get(
       await Promise.all([
         supabase
           .from('perfiles')
-          .select('pasos_totales, calorias_totales, visitas_totales')
-          .eq('usuario_id', req.userId!)
+          .select('pasos_total, distancia_km')
+          .eq('id', req.userId!)
           .single(),
         supabase
           .from('usuario_insignias')
@@ -77,13 +76,13 @@ router.get(
   })
 );
 
-// GET /perfiles/:id — público (para vista de perfil empresa)
+// GET /perfiles/:id — público
 router.get(
   '/:id',
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { data, error } = await supabase
       .from('perfiles')
-      .select('id, nombre, avatar_url, rol, visitas_totales, pasos_totales, created_at')
+      .select('id, nombre, foto_url, tipo, pasos_total, distancia_km, creado_en')
       .eq('id', req.params.id)
       .single();
 
