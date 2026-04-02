@@ -6,7 +6,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/theme/tema_provider.dart';
 import '../../domain/models/poi_model.dart';
-import '../providers/map_provider.dart';
 
 class PoiBottomSheet extends ConsumerWidget {
   final PoiModel poi;
@@ -97,7 +96,7 @@ class PoiBottomSheet extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     poi.descripcion,
-                    style: TextStyle(
+                    style: const TextStyle(
                         color: AppColors.textSecondary, fontSize: 13),
                   ),
                 ],
@@ -110,7 +109,7 @@ class PoiBottomSheet extends ConsumerWidget {
                       const SizedBox(width: 4),
                       Text(
                         poi.horario!,
-                        style: TextStyle(
+                        style: const TextStyle(
                             color: AppColors.textSecondary, fontSize: 12),
                       ),
                     ],

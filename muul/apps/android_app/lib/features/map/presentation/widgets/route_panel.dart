@@ -83,7 +83,7 @@ class RoutePanel extends StatelessWidget {
                         ),
                         Text(
                           rutas[i].distanciaTexto,
-                          style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
                         ),
                       ],
                     ),
@@ -120,7 +120,7 @@ class RoutePanel extends StatelessWidget {
                       Expanded(
                         child: Text(
                           rutaActiva.instrucciones[i],
-                          style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
                         ),
                       ),
                     ],

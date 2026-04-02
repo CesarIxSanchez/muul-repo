@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/theme/tema_provider.dart';
 import '../../domain/models/poi_model.dart';
-import '../providers/map_provider.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 class MapSearchBar extends ConsumerStatefulWidget {
@@ -68,7 +67,7 @@ class _MapSearchBarState extends ConsumerState<MapSearchBar> {
           child: Row(
             children: [
               const SizedBox(width: 12),
-              Icon(Icons.search, color: AppColors.textSecondary, size: 20),
+              const Icon(Icons.search, color: AppColors.textSecondary, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Focus(
@@ -77,7 +76,7 @@ class _MapSearchBarState extends ConsumerState<MapSearchBar> {
                     controller: _controller,
                     onChanged: _onChanged,
                     style: const TextStyle(color: Colors.white, fontSize: 14),
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintText: 'Buscar lugares, calles, ciudades…',
                       hintStyle: TextStyle(
                         color: AppColors.textSecondary,
@@ -222,7 +221,7 @@ class _SuggestionTile extends StatelessWidget {
                   if (poi.descripcion.isNotEmpty)
                     Text(
                       poi.descripcion,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 11,
                       ),
@@ -231,7 +230,7 @@ class _SuggestionTile extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.north_west, color: AppColors.textSecondary, size: 14),
+            const Icon(Icons.north_west, color: AppColors.textSecondary, size: 14),
           ],
         ),
       ),

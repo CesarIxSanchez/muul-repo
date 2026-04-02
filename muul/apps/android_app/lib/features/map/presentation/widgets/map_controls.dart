@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/theme/tema_provider.dart';
-import '../providers/map_provider.dart';
 
 class MapControls extends ConsumerWidget {
   final TemaColors temaColors;

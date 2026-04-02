@@ -68,27 +68,34 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         body: Stack(
           children: [
             // ── Mapa ───────────────────────────────────────────────────
-            MapWidget(
-              key: const ValueKey('muul_map'),
-              styleUri: AppConstants.mapboxStyleDark,
-              cameraOptions: CameraOptions(
-                center: Point(coordinates: Position(-99.1332, 19.4326)),
-                zoom: 13.0,
-              ),
-              onMapCreated: (MapboxMap controller) async {
-                _annotationManager = await controller.annotations
-                    .createPointAnnotationManager();
-                _polylineManager = await controller.annotations
-                    .createPolylineAnnotationManager();
+            Positioned.fill(
+              child: MapWidget(
+                key: const ValueKey('muul_map'),
+                styleUri: AppConstants.mapboxStyleDark,
+                cameraOptions: CameraOptions(
+                  center: Point(coordinates: Position(-99.1332, 19.4326)),
+                  zoom: 13.0,
+                ),
+                onMapCreated: (MapboxMap controller) async {
+                  _annotationManager = await controller.annotations
+                      .createPointAnnotationManager();
+                  _polylineManager = await controller.annotations
+                      .createPolylineAnnotationManager();
 
-                // ✅ FIX: pasamos context explícitamente
-                _annotationManager!.addOnPointAnnotationClickListener(
-                  _PoiClickListener(ref: ref, context: context),
-                );
-                ref.read(mapProvider.notifier).onMapCreated(controller);
-              },
-              onStyleLoadedListener: (_) =>
-                  debugPrint('🗺️ dark-v11 cargado'),
+                  // Ocultar elementos de UI por defecto para que sea más premium
+                  controller.compass.updateSettings(CompassSettings(enabled: false));
+                  controller.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
+                  controller.logo.updateSettings(LogoSettings(enabled: false));
+                  controller.attribution.updateSettings(AttributionSettings(enabled: false));
+
+                  _annotationManager!.addOnPointAnnotationClickListener(
+                    _PoiClickListener(ref: ref, context: context),
+                  );
+                  ref.read(mapProvider.notifier).onMapCreated(controller);
+                },
+                onStyleLoadedListener: (_) =>
+                    debugPrint('🗺️ dark-v11 cargado'),
+              ),
             ),
 
             // ── Barra superior ─────────────────────────────────────────
@@ -459,7 +466,7 @@ class _LoadingChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
+          const SizedBox(
             width: 14,
             height: 14,
             child: CircularProgressIndicator(
@@ -470,7 +477,7 @@ class _LoadingChip extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             texto,
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
           ),
         ],
       ),

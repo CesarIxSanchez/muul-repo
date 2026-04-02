@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../models/profile_models.dart';
 import '../services/profile_service.dart';
 import '../state/session_controller.dart';
-import 'home_screen.dart';
 
 class CompleteBusinessProfileScreen extends StatefulWidget {
   const CompleteBusinessProfileScreen({
@@ -54,12 +53,8 @@ class _CompleteBusinessProfileScreenState extends State<CompleteBusinessProfileS
       );
 
       if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (_) => HomeScreen(sessionController: widget.sessionController),
-        ),
-        (route) => false,
-      );
+      // Volver al AuthGate (raíz) – detectará la sesión activa y mostrará MainShell
+      Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

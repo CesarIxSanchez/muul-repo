@@ -181,8 +181,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     ),
                   const SizedBox(height: 14),
                   if (!_isBusiness)
-                    Row(
-                      children: const [
+                    const Row(
+                      children: [
                         Expanded(child: _StatCard(title: 'RUTAS', value: '24', icon: Icons.route)),
                         SizedBox(width: 8),
                         Expanded(child: _StatCard(title: 'ESTADIOS', value: '08', icon: Icons.stadium)),

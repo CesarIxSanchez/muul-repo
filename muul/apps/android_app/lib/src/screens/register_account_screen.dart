@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../state/session_controller.dart';
+import '../widgets/muul_background.dart';
+import '../../core/constants/app_colors.dart';
 import 'complete_business_profile_screen.dart';
 import 'complete_profile_screen.dart';
 
@@ -109,18 +111,46 @@ class _RegisterAccountScreenState extends State<RegisterAccountScreen> {
     final isBusiness = widget.registrationType == RegistrationType.business;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: Text(isBusiness ? 'Registro negocio' : 'Registro turista'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text('Paso 1 de 2'),
-              const SizedBox(height: 16),
+      body: MuulBackground(
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 390),
+                decoration: BoxDecoration(
+                  color: AppColors.bgCard.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: AppColors.secondary.withValues(alpha: 0.2)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.secondary.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      spreadRadius: -5,
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(22),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Paso 1 de 2',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: AppColors.textSecondary,
+                              letterSpacing: 1.5,
+                            ),
+                      ),
+                      const SizedBox(height: 20),
               TextFormField(
                 controller: _emailCtrl,
                 keyboardType: TextInputType.emailAddress,
@@ -201,15 +231,27 @@ class _RegisterAccountScreenState extends State<RegisterAccountScreen> {
                 okText: 'Contrasenas coinciden',
                 failText: 'Las contrasenas no coinciden',
               ),
-              const Spacer(),
+              const SizedBox(height: 32),
               FilledButton(
                 onPressed: widget.sessionController.loading ? null : _continue,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.secondary,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(54),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
                 child: const Text('Continuar'),
               ),
             ],
           ),
         ),
       ),
+    ),
+    ),
+    ),
+    ),
     );
   }
 }
+
+

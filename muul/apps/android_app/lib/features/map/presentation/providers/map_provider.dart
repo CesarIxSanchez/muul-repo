@@ -7,6 +7,7 @@ import '../../../../core/services/location_service.dart';
 import '../../data/poi_repository.dart';
 import '../../data/route_service.dart';
 import '../../domain/models/poi_model.dart';
+import '../../../explore/presentation/providers/explore_provider.dart';
 
 class MapState {
   final geo.Position? userPosition;
@@ -111,7 +112,28 @@ class MapNotifier extends AsyncNotifier<MapState> {
   final _routeSvc = RouteService();
 
   @override
-  Future<MapState> build() async => const MapState();
+  Future<MapState> build() async {
+    // Escuchar cambios en los POIs filtrados para actualizar el mapa reactivamente
+    ref.listen(filteredPoisProvider, (prev, next) {
+      next.whenData((places) {
+        final mapPois = places.map((p) => PoiModel(
+          id: p.id,
+          nombre: p.name,
+          categoria: p.category,
+          descripcion: p.description,
+          latitud: p.latitude,
+          longitud: p.longitude,
+          verificado: p.isVerified,
+        )).toList();
+
+        state = AsyncData(state.value?.copyWith(
+          pois: mapPois,
+        ) ?? MapState(pois: mapPois));
+      });
+    });
+
+    return const MapState();
+  }
 
   Future<void> onMapCreated(MapboxMap controller) async {
     state = AsyncData(state.value!.copyWith(
@@ -141,15 +163,32 @@ class MapNotifier extends AsyncNotifier<MapState> {
 
   Future<void> fetchPoisCercanos() async {
     final s = state.value ?? const MapState();
-    if (s.userPosition == null) return;
     state = AsyncData(s.copyWith(isLoadingPois: true));
-    final pois = await _poiRepo.fetchTodosPois(
-      lat: s.userPosition!.latitude,
-      lng: s.userPosition!.longitude,
-    );
-    state = AsyncData((state.value ?? const MapState()).copyWith(
-      pois: pois, isLoadingPois: false,
-    ));
+    
+    try {
+      // 1. Obtenemos los POIs desde los filtros globales
+      final poisAsync = ref.read(filteredPoisProvider);
+      
+      poisAsync.whenData((places) {
+        // 2. Convertimos los modelos de 'data' package a 'PoiModel' del mapa
+        final mapPois = places.map((p) => PoiModel(
+          id: p.id,
+          nombre: p.name,
+          categoria: p.category,
+          descripcion: p.description,
+          latitud: p.latitude,
+          longitud: p.longitude,
+          verificado: p.isVerified,
+        )).toList();
+
+        state = AsyncData(state.value!.copyWith(
+          pois: mapPois, 
+          isLoadingPois: false
+        ));
+      });
+    } catch (_) {
+      state = AsyncData(state.value!.copyWith(isLoadingPois: false));
+    }
   }
 
   void toggleFiltro(String categoria) {

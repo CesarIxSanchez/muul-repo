@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/tema_provider.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../providers/map_provider.dart';
 
 class FilterChipsBar extends ConsumerWidget {
   const FilterChipsBar({super.key});

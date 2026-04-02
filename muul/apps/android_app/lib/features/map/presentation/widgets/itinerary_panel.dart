@@ -49,7 +49,7 @@ class ItineraryPanel extends StatelessWidget {
                   ),
                   Text(
                     _distanciaTexto(itinerario.distanciaTotal),
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
                   ),
                 ],
               ),
@@ -97,7 +97,7 @@ class ItineraryPanel extends StatelessWidget {
                             ),
                             Text(
                               'Desde: ${etapa.desde}',
-                              style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
                             ),
                           ],
                         ),
@@ -110,7 +110,7 @@ class ItineraryPanel extends StatelessWidget {
                           ),
                           Text(
                             _distanciaTexto(etapa.distanciaMetros),
-                            style: TextStyle(color: AppColors.textSecondary, fontSize: 10),
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 10),
                           ),
                         ],
                       ),

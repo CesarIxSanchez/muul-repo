@@ -4,6 +4,7 @@ import '../state/session_controller.dart';
 import '../theme/muul_theme.dart';
 import '../widgets/muul_background.dart';
 import 'register_account_screen.dart';
+import '../../core/constants/app_colors.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({
@@ -42,10 +43,47 @@ class _LoginScreenState extends State<LoginScreen> {
       widget.onLoginSuccess();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error de login: $e')),
-      );
+      _showErrorSnackBar(_friendlyError(e));
     }
+  }
+
+  String _friendlyError(Object e) {
+    final msg = e.toString().toLowerCase();
+    if (msg.contains('invalid_credentials') || msg.contains('invalid login')) {
+      return 'Correo o contraseña incorrectos. Verifica tus datos.';
+    }
+    if (msg.contains('email_not_confirmed')) {
+      return 'Tu correo aún no ha sido confirmado. Revisa tu bandeja.';
+    }
+    if (msg.contains('too_many_requests') || msg.contains('rate_limit')) {
+      return 'Demasiados intentos. Espera un momento antes de intentar de nuevo.';
+    }
+    if (msg.contains('network') || msg.contains('socket') || msg.contains('connection')) {
+      return 'Sin conexión a internet. Verifica tu red e intenta de nuevo.';
+    }
+    if (msg.contains('user_not_found')) {
+      return 'No existe una cuenta con este correo.';
+    }
+    return 'Ocurrió un error inesperado. Intenta de nuevo.';
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(child: Text(message, style: const TextStyle(color: Colors.white, fontSize: 14))),
+          ],
+        ),
+        backgroundColor: AppColors.accent.withValues(alpha: 0.9),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   Future<void> _openRegistrationTypeSelector() async {
@@ -113,9 +151,16 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Container(
                 constraints: const BoxConstraints(maxWidth: 390),
                 decoration: BoxDecoration(
-                  color: const Color(0xCC0D121D),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF6B89D8)),
+                  color: AppColors.bgCard.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: AppColors.secondary.withValues(alpha: 0.2)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.secondary.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      spreadRadius: -5,
+                    ),
+                  ],
                 ),
                 padding: const EdgeInsets.all(22),
                 child: Form(
@@ -129,10 +174,21 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: 86,
                         margin: const EdgeInsets.only(bottom: 16),
                         decoration: BoxDecoration(
-                          color: MuulTheme.accent,
-                          borderRadius: BorderRadius.circular(20),
+                          gradient: const LinearGradient(
+                            colors: [AppColors.secondary, AppColors.primary],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.secondary.withValues(alpha: 0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        child: const Icon(Icons.explore, size: 40),
+                        child: const Icon(Icons.explore, size: 40, color: Colors.white),
                       ),
                       Text(
                         'MUUL',
@@ -224,9 +280,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       FilledButton(
                         onPressed: widget.sessionController.loading ? null : _submit,
                         style: FilledButton.styleFrom(
-                          backgroundColor: MuulTheme.accent,
+                          backgroundColor: AppColors.secondary,
+                          foregroundColor: Colors.white,
                           minimumSize: const Size.fromHeight(54),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                         child: const Text('Iniciar Sesion'),
                       ),
@@ -294,8 +351,9 @@ class _FakeSocialButton extends StatelessWidget {
       icon: const Icon(Icons.link),
       label: Text(text),
       style: OutlinedButton.styleFrom(
-        minimumSize: const Size.fromHeight(44),
-        side: const BorderSide(color: Color(0xFF2D3344)),
+        minimumSize: const Size.fromHeight(48),
+        side: BorderSide(color: AppColors.secondary.withValues(alpha: 0.3)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }

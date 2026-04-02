@@ -34,6 +34,12 @@ dependencies:
   shimmer: ^3.0.0
   google_fonts: ^6.3.1
 
+  ui:
+    path: ../../packages/ui
+
+  data:
+    path: ../../packages/data
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
