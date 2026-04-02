@@ -1,10 +1,10 @@
 // lib/features/map/presentation/map_screen.dart
 
-import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'providers/map_provider.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_colors.dart';
@@ -27,20 +27,22 @@ class MapScreen extends ConsumerStatefulWidget {
 }
 
 class _MapScreenState extends ConsumerState<MapScreen> {
-  PointAnnotationManager?  _annotationManager;
+  PointAnnotationManager?    _annotationManager;
   PolylineAnnotationManager? _polylineManager;
+  final Map<String, Uint8List> _iconCache = {};
 
   @override
   Widget build(BuildContext context) {
     final mapState   = ref.watch(mapProvider);
     final temaColors = ref.watch(temaColoresProvider);
     final s          = mapState.value;
+    final hayPanel   = (s?.rutasAlternativas.isNotEmpty ?? false) ||
+                       (s?.itinerario != null);
 
-    // Redibuja marcadores y rutas cuando cambia el estado
     ref.listen(mapProvider, (prev, next) {
       final ns = next.value;
       if (ns == null) return;
-      _dibujarPois(ns.poisFiltrados);
+      _dibujarPois(ns.poisFiltrados, temaColors);
       if (ns.rutasAlternativas.isNotEmpty) {
         _dibujarRutas(ns.rutasAlternativas, ns.rutaActivaIndex, temaColors);
       } else if (ns.itinerarioCoords.isNotEmpty) {
@@ -50,14 +52,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       }
     });
 
-    final hayPanel = (s?.rutasAlternativas.isNotEmpty ?? false) ||
-                     (s?.itinerario != null);
-
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
-        // Botón back: cierra panel si hay uno abierto
         if (hayPanel) {
           ref.read(mapProvider.notifier).limpiarRutas();
           _polylineManager?.deleteAll();
@@ -69,7 +67,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         backgroundColor: AppColors.bgApp,
         body: Stack(
           children: [
-            // ── Mapa ───────────────────────────────────────────────────────
+            // ── Mapa ───────────────────────────────────────────────────
             MapWidget(
               key: const ValueKey('muul_map'),
               styleUri: AppConstants.mapboxStyleDark,
@@ -82,8 +80,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     .createPointAnnotationManager();
                 _polylineManager = await controller.annotations
                     .createPolylineAnnotationManager();
+
+                // ✅ FIX: pasamos context explícitamente
                 _annotationManager!.addOnPointAnnotationClickListener(
-                  _PoiClickListener(ref),
+                  _PoiClickListener(ref: ref, context: context),
                 );
                 ref.read(mapProvider.notifier).onMapCreated(controller);
               },
@@ -91,21 +91,21 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   debugPrint('🗺️ dark-v11 cargado'),
             ),
 
-            // ── Barra superior: búsqueda + filtros ─────────────────────────
+            // ── Barra superior ─────────────────────────────────────────
             Positioned(
               top: MediaQuery.of(context).padding.top + 8,
               left: 12,
               right: 12,
-              child: Column(
+              child: const Column(
                 children: [
-                  const MapSearchBar(),
-                  const SizedBox(height: 8),
-                  const FilterChipsBar(),
+                  MapSearchBar(),
+                  SizedBox(height: 8),
+                  FilterChipsBar(),
                 ],
               ),
             ),
 
-            // ── Loading chips ──────────────────────────────────────────────
+            // ── Loading chips ──────────────────────────────────────────
             if (s?.isLoadingPois ?? false)
               Positioned(
                 top: MediaQuery.of(context).padding.top + 108,
@@ -131,7 +131,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ),
               ),
 
-            // ── Panel rutas alternativas ───────────────────────────────────
+            // ── Panel rutas alternativas ───────────────────────────────
             if ((s?.rutasAlternativas.isNotEmpty ?? false) &&
                 s?.itinerario == null)
               Positioned(
@@ -149,7 +149,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ),
               ),
 
-            // ── Panel itinerario ───────────────────────────────────────────
+            // ── Panel itinerario ───────────────────────────────────────
             if (s?.itinerario != null)
               Positioned(
                 bottom: 0, left: 0, right: 0,
@@ -163,12 +163,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ),
               ),
 
-            // ── Botón calcular itinerario ──────────────────────────────────
+            // ── Botón calcular itinerario ──────────────────────────────
             if ((s?.poisParaItinerario.isNotEmpty ?? false) &&
                 s?.itinerario == null)
               Positioned(
-                bottom: 100,
-                left: 16, right: 72,
+                bottom: 100, left: 16, right: 72,
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: temaColors.secondary,
@@ -188,40 +187,139 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ),
               ),
 
-            // ── Controles (no se superponen al panel) ──────────────────────
-            Positioned(
-              bottom: hayPanel ? 300 : 32,
-              right: 16,
-              child: MapControls(temaColors: temaColors),
-            ),
+            // ── Controles ──────────────────────────────────────────────
+            if (!hayPanel)
+              Positioned(
+                bottom: 32, right: 16,
+                child: MapControls(temaColors: temaColors),
+              ),
 
-            // ── Badge tema ─────────────────────────────────────────────────
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 12,
-              right: 16,
-              child: _TemaBadge(temaColors: temaColors),
-            ),
+            // ── Badge tema ─────────────────────────────────────────────
+            if (!hayPanel)
+              Positioned(
+                bottom: 32, left: 16,
+                child: _TemaBadge(temaColors: temaColors),
+              ),
           ],
         ),
       ),
     );
   }
 
-  Future<void> _dibujarPois(List<PoiModel> pois) async {
+  // ── Helpers de íconos ──────────────────────────────────────────────────────
+
+  Future<Uint8List> _generarIcono(Color color, IconData icon) async {
+    final key = '${color.value}_${icon.codePoint}';
+    if (_iconCache.containsKey(key)) return _iconCache[key]!;
+
+    final recorder = ui.PictureRecorder();
+    final canvas   = Canvas(recorder);
+    const size     = 48.0;
+
+    final paint = Paint()..color = color;
+    canvas.drawCircle(const Offset(size / 2, size / 2), size / 2, paint);
+
+    final border = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3;
+    canvas.drawCircle(const Offset(size / 2, size / 2), size / 2 - 1.5, border);
+
+    final tp = TextPainter(textDirection: TextDirection.ltr)
+      ..text = TextSpan(
+        text: String.fromCharCode(icon.codePoint),
+        style: TextStyle(
+          fontFamily: icon.fontFamily,
+          fontSize: 24,
+          color: Colors.white,
+        ),
+      )
+      ..layout();
+    tp.paint(canvas, Offset((size - tp.width) / 2, (size - tp.height) / 2));
+
+    final picture = recorder.endRecording();
+    final img     = await picture.toImage(size.toInt(), size.toInt());
+    final bytes   = await img.toByteData(format: ui.ImageByteFormat.png);
+    final result  = bytes!.buffer.asUint8List();
+
+    _iconCache[key] = result;
+    return result;
+  }
+
+  Color _colorParaCategoria(String cat, TemaColors temaColors) {
+    switch (cat.toLowerCase()) {
+      case 'restaurant':
+      case 'comida':
+      case 'food':
+        return const Color(0xFFE53935);
+      case 'museum':
+      case 'cultura':
+      case 'historic':
+        return const Color(0xFF8E24AA);
+      case 'market':
+      case 'tienda':
+      case 'shop':
+        return const Color(0xFF1E88E5);
+      case 'park':
+        return const Color(0xFF43A047);
+      case 'cafe':
+        return const Color(0xFF6D4C41);
+      default:
+        return temaColors.secondary;
+    }
+  }
+
+  IconData _iconParaCategoria(String cat) {
+    switch (cat.toLowerCase()) {
+      case 'restaurant':
+      case 'comida':
+      case 'food':
+        return Icons.restaurant;
+      case 'museum':
+      case 'cultura':
+        return Icons.museum;
+      case 'historic':
+        return Icons.account_balance;
+      case 'market':
+      case 'tienda':
+      case 'shop':
+        return Icons.shopping_bag;
+      case 'park':
+        return Icons.park;
+      case 'cafe':
+        return Icons.coffee;
+      default:
+        return Icons.place;
+    }
+  }
+
+  Future<void> _dibujarPois(
+    List<PoiModel> pois,
+    TemaColors temaColors,
+  ) async {
     if (_annotationManager == null) return;
     await _annotationManager!.deleteAll();
+
     for (final poi in pois) {
+      final color  = _colorParaCategoria(poi.categoria, temaColors);
+      final icon   = _iconParaCategoria(poi.categoria);
+      final imagen = await _generarIcono(color, icon);
+
       await _annotationManager!.create(
         PointAnnotationOptions(
           geometry: Point(
-              coordinates: Position(poi.longitud, poi.latitud)),
-          iconSize: poi.verificado ? 1.4 : 1.0,
+            coordinates: Position(poi.longitud, poi.latitud),
+          ),
+          image: imagen,
+          iconSize: poi.verificado ? 1.3 : 1.0,
+          iconAnchor: IconAnchor.BOTTOM,
           textField: poi.nombre,
           textSize: 10,
           textColor: Colors.white.value,
           textHaloColor: Colors.black.value,
-          textHaloWidth: 1.0,
-          textOffset: [0, 1.5],
+          textHaloWidth: 1.5,
+          textOffset: [0, 0.5],
+          textAnchor: TextAnchor.TOP,
         ),
       );
     }
@@ -234,21 +332,39 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   ) async {
     if (_polylineManager == null) return;
     await _polylineManager!.deleteAll();
+
     for (var i = 0; i < rutas.length; i++) {
       final esActiva = i == indexActivo;
       final coords = rutas[i]
           .coordenadas
           .map((c) => Position(c[0], c[1]))
           .toList();
-      await _polylineManager!.create(
-        PolylineAnnotationOptions(
-          geometry: LineString(coordinates: coords),
-          lineColor: esActiva
-              ? temaColors.secondary.value
-              : Colors.grey.withValues(alpha: 0.4).value,
-          lineWidth: esActiva ? 5.0 : 2.5,
-        ),
-      );
+
+      if (esActiva) {
+        await _polylineManager!.create(
+          PolylineAnnotationOptions(
+            geometry: LineString(coordinates: coords),
+            lineColor: temaColors.secondary.withValues(alpha: 0.35).value,
+            lineWidth: 16.0,
+            lineBlur: 8.0,
+          ),
+        );
+        await _polylineManager!.create(
+          PolylineAnnotationOptions(
+            geometry: LineString(coordinates: coords),
+            lineColor: temaColors.secondary.value,
+            lineWidth: 4.5,
+          ),
+        );
+      } else {
+        await _polylineManager!.create(
+          PolylineAnnotationOptions(
+            geometry: LineString(coordinates: coords),
+            lineColor: Colors.grey.withValues(alpha: 0.35).value,
+            lineWidth: 2.5,
+          ),
+        );
+      }
     }
   }
 
@@ -259,39 +375,62 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     if (_polylineManager == null) return;
     await _polylineManager!.deleteAll();
     final positions = coords.map((c) => Position(c[0], c[1])).toList();
+
+    await _polylineManager!.create(
+      PolylineAnnotationOptions(
+        geometry: LineString(coordinates: positions),
+        lineColor: temaColors.secondary.withValues(alpha: 0.35).value,
+        lineWidth: 16.0,
+        lineBlur: 8.0,
+      ),
+    );
     await _polylineManager!.create(
       PolylineAnnotationOptions(
         geometry: LineString(coordinates: positions),
         lineColor: temaColors.secondary.value,
-        lineWidth: 5.0,
+        lineWidth: 4.5,
       ),
     );
   }
-}
+
+} // ✅ _MapScreenState termina AQUÍ
+
+// ════════════════════════════════════════════════════════════════════════════
+// Clases de nivel superior — FUERA de _MapScreenState
+// ════════════════════════════════════════════════════════════════════════════
 
 // ── POI click listener ────────────────────────────────────────────────────────
+
 class _PoiClickListener extends OnPointAnnotationClickListener {
   final WidgetRef ref;
-  _PoiClickListener(this.ref);
+  final BuildContext context; // ✅ FIX: context separado de ref
+
+  _PoiClickListener({required this.ref, required this.context});
 
   @override
   bool onPointAnnotationClick(PointAnnotation annotation) {
-    final pois  = ref.read(mapProvider).value?.pois ?? [];
+    final pois   = ref.read(mapProvider).value?.pois ?? [];
     final coords = annotation.geometry.coordinates;
+
     final poi = pois.firstWhere(
       (p) =>
           (p.longitud - coords.lng).abs() < 0.0001 &&
           (p.latitud  - coords.lat).abs() < 0.0001,
       orElse: () => PoiModel(
-        id: '', nombre: 'Lugar', categoria: 'general',
+        id: '',
+        nombre: 'Lugar',
+        categoria: 'general',
         descripcion: '',
-        latitud: coords.lat.toDouble(),
+        latitud:  coords.lat.toDouble(),
         longitud: coords.lng.toDouble(),
       ),
     );
+
     ref.read(mapProvider.notifier).seleccionarPoi(poi);
+
+    // ✅ FIX: usamos this.context en lugar de ref.context
     showModalBottomSheet(
-      context: ref.context,
+      context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => PoiBottomSheet(poi: poi),
@@ -300,9 +439,11 @@ class _PoiClickListener extends OnPointAnnotationClickListener {
   }
 }
 
-// ── Widgets auxiliares ────────────────────────────────────────────────────────
+// ── Loading chip ──────────────────────────────────────────────────────────────
+
 class _LoadingChip extends StatelessWidget {
   final String texto;
+
   const _LoadingChip({required this.texto});
 
   @override
@@ -312,35 +453,36 @@ class _LoadingChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.bgCard,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-            color: AppColors.secondary.withValues(alpha: 0.4)),
-        boxShadow: [
-          BoxShadow(color: Colors.black38, blurRadius: 6),
-        ],
+        border: Border.all(color: AppColors.secondary.withValues(alpha: 0.4)),
+        boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 6)],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
-            width: 14, height: 14,
+            width: 14,
+            height: 14,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              valueColor:
-                  AlwaysStoppedAnimation(AppColors.secondary),
+              valueColor: AlwaysStoppedAnimation(AppColors.secondary),
             ),
           ),
           const SizedBox(width: 8),
-          Text(texto,
-              style: TextStyle(
-                  color: AppColors.textSecondary, fontSize: 12)),
+          Text(
+            texto,
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+          ),
         ],
       ),
     );
   }
 }
 
+// ── Tema badge ────────────────────────────────────────────────────────────────
+
 class _TemaBadge extends StatelessWidget {
   final TemaColors temaColors;
+
   const _TemaBadge({required this.temaColors});
 
   @override
@@ -350,14 +492,15 @@ class _TemaBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: temaColors.primary.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black38, blurRadius: 4)],
+        boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 4)],
       ),
       child: Text(
         temaColors.nombre,
         style: const TextStyle(
-            color: Colors.white,
-            fontSize: 11,
-            fontWeight: FontWeight.w600),
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
