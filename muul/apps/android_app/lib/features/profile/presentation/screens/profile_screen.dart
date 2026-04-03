@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../src/services/auth_session_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -12,6 +13,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   String _displayName = '';
   String _email = '';
+  bool _isBusiness = false;
   bool _loading = true;
 
   @override
@@ -39,6 +41,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       } catch (_) {
         name = email.split('@').first;
       }
+    }
+
+    // Verificar si tiene perfil de negocio
+    if (user != null) {
+      try {
+        final biz = await client.from('businesses').select('id').eq('id', user.id).maybeSingle();
+        if (biz != null) {
+          name = name; // keep whatever name we got
+          _isBusiness = true;
+        }
+      } catch (_) {}
     }
 
     if (mounted) {
@@ -127,14 +140,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 40),
 
-              // Opciones de Configuración
-              _ProfileOption(
-                icon: Icons.storefront_outlined,
-                label: 'Gestión de mi Negocio',
-                onTap: () {
-                  Navigator.pushNamed(context, '/business_profile');
-                },
-              ),
+              // Solo mostrar gestión de negocio si el usuario es tipo negocio
+              if (_isBusiness)
+                _ProfileOption(
+                  icon: Icons.storefront_outlined,
+                  label: 'Gestión de mi Negocio',
+                  onTap: () {
+                    Navigator.pushNamed(context, '/business_profile');
+                  },
+                ),
               _ProfileOption(icon: Icons.bookmark_outline, label: 'Lugares guardados', onTap: () {}),
               _ProfileOption(icon: Icons.history, label: 'Historial de visitas', onTap: () {}),
               _ProfileOption(icon: Icons.notifications_none_outlined, label: 'Notificaciones', onTap: () {}),
@@ -174,7 +188,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     );
                     if (confirm == true && context.mounted) {
-                      await Supabase.instance.client.auth.signOut();
+                      // Usar AuthSessionService para limpiar también el token persistido
+                      final authService = AuthSessionService();
+                      await authService.signOut();
                     }
                   },
                   child: const Text(

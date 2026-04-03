@@ -26,8 +26,12 @@ class SessionController extends ChangeNotifier {
     try {
       await _authService.restoreSession();
       await _authService.saveSessionTokens();
-      _sub = _authService.authChanges.listen((_) async {
-        await _authService.saveSessionTokens();
+      _sub = _authService.authChanges.listen((authState) async {
+        if (authState.event == AuthChangeEvent.signedOut) {
+          await _authService.clearStoredTokens();
+        } else {
+          await _authService.saveSessionTokens();
+        }
         notifyListeners();
       });
       _error = null;

@@ -46,6 +46,12 @@ class AuthSessionService {
     await _storage.delete(key: _refreshKey);
   }
 
+  /// Limpia tokens almacenados sin llamar a Supabase signOut
+  /// (para usar cuando el evento de sign out ya fue disparado)
+  Future<void> clearStoredTokens() async {
+    await _storage.delete(key: _refreshKey);
+  }
+
   Future<String?> ensureValidAccessToken() async {
     final session = _client.auth.currentSession;
     if (session == null) return null;
