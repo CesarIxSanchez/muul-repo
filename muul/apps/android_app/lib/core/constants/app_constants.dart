@@ -15,8 +15,8 @@ class AppConstants {
       'https://api.mapbox.com/search/searchbox/v1/category';
 
   // ── Supabase ─────────────────────────────────────────────────
-  static const String supabaseUrl = supabaseUrlEnv;
-  static const String supabaseAnonKey = supabaseAnonKeyEnv;
+static const String supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+static const String supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
   // ── API Real de Vercel (opcional) ─────────────────────────────
   static const String prodApiBaseUrl = 'https://muul-api.vercel.app/api/v1';
