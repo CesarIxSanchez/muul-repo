@@ -56,11 +56,37 @@ class SessionController extends ChangeNotifier {
     }
   }
 
-  Future<void> signUp(String email, String password) async {
+  Future<void> signUp(String email, String password, {String userType = 'usuario'}) async {
     _setLoading(true);
     try {
-      await _authService.signUp(email: email, password: password);
+      await _authService.signUp(email: email, password: password, userType: userType);
       _error = null;
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<Map<String, dynamic>> signUpViaApi({
+    required String email,
+    required String password,
+    required String nombre,
+    required String tipo,
+    String idioma = 'es',
+  }) async {
+    _setLoading(true);
+    try {
+      final result = await _authService.signUpViaApi(
+        email: email,
+        password: password,
+        nombre: nombre,
+        tipo: tipo,
+        idioma: idioma,
+      );
+      _error = null;
+      return result;
     } catch (e) {
       _error = e.toString();
       rethrow;

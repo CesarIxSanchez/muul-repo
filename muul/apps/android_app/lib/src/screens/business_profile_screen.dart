@@ -34,8 +34,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
     final current = _profile;
     if (current == null) return;
 
-    final avatarCtrl = TextEditingController(text: current.avatarUrl ?? '');
-    var lang = current.language;
+    var lang = 'es-MX';
 
     final saved = await showDialog<bool>(
       context: context,
@@ -49,15 +48,15 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                 enabled: false,
                 decoration: InputDecoration(
                   labelText: 'Nombre del negocio (bloqueado)',
-                  hintText: current.businessName,
+                  hintText: current.nombre,
                 ),
               ),
               const SizedBox(height: 8),
               TextField(
                 enabled: false,
                 decoration: InputDecoration(
-                  labelText: 'Dirección (bloqueada)',
-                  hintText: current.address,
+                  labelText: 'Latitud (bloqueada)',
+                  hintText: '${current.latitud ?? 0.0}',
                 ),
               ),
               const SizedBox(height: 8),
@@ -69,11 +68,6 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                 ],
                 onChanged: (v) => setLocal(() => lang = v ?? 'es-MX'),
                 decoration: const InputDecoration(labelText: 'Idioma'),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: avatarCtrl,
-                decoration: const InputDecoration(labelText: 'Avatar URL'),
               ),
             ],
           ),
@@ -87,7 +81,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
 
     if (saved != true) return;
 
-    await _service.updateBusinessProfile(language: lang, avatarUrl: avatarCtrl.text.trim());
+    await _service.updateBusinessProfile(language: lang);
     if (!mounted) return;
     await _load();
   }
@@ -112,22 +106,22 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
           children: [
             CircleAvatar(
               radius: 38,
-              backgroundImage: NetworkImage(p.avatarUrl ?? 'https://i.pravatar.cc/300?img=22'),
+              backgroundImage: NetworkImage(p.fotoUrl ?? 'https://i.pravatar.cc/300?img=22'),
             ),
             const SizedBox(height: 16),
             TextFormField(
-              initialValue: p.businessName,
+              initialValue: p.nombre,
               enabled: false,
               decoration: const InputDecoration(labelText: 'Nombre del negocio (inmutable)'),
             ),
             const SizedBox(height: 10),
             TextFormField(
-              initialValue: p.address,
+              initialValue: '${p.latitud ?? 0.0}, ${p.longitud ?? 0.0}',
               enabled: false,
-              decoration: const InputDecoration(labelText: 'Dirección (inmutable)'),
+              decoration: const InputDecoration(labelText: 'Ubicación (inmutable)'),
             ),
             const SizedBox(height: 10),
-            Text('Idioma actual: ${p.language}'),
+            Text('Descripción: ${p.descripcion ?? 'Sin descripción'}'),
             const Spacer(),
             FilledButton(onPressed: _edit, child: const Text('Editar campos permitidos')),
           ],

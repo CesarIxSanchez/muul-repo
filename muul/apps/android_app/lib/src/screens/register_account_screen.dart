@@ -53,13 +53,24 @@ class _RegisterAccountScreenState extends State<RegisterAccountScreen> {
     if (!_passwordIsStrong || !_passwordsMatch) return;
 
     try {
-      await widget.sessionController.signUp(_emailCtrl.text.trim(), _passwordCtrl.text);
+      // Determinar el tipo de usuario
+      final userType = widget.registrationType == RegistrationType.tourist ? 'usuario' : 'empresa';
+      
+      // Registrarse con Supabase, pasando el tipo de usuario
+      await widget.sessionController.signUp(
+        _emailCtrl.text.trim(),
+        _passwordCtrl.text,
+        userType: userType,
+      );
       if (!mounted) return;
 
       if (widget.registrationType == RegistrationType.tourist) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (_) => CompleteProfileScreen(sessionController: widget.sessionController),
+            builder: (_) => CompleteProfileScreen(
+              sessionController: widget.sessionController,
+              userType: 'usuario',
+            ),
           ),
         );
       } else {
@@ -67,6 +78,7 @@ class _RegisterAccountScreenState extends State<RegisterAccountScreen> {
           MaterialPageRoute(
             builder: (_) => CompleteBusinessProfileScreen(
               sessionController: widget.sessionController,
+              userType: 'empresa',
             ),
           ),
         );

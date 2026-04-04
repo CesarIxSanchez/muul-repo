@@ -1,13 +1,22 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/constants/app_constants.dart';
+import 'muul_api_client.dart';
+
 class AuthSessionService {
-  AuthSessionService({SupabaseClient? client}) : _client = client ?? Supabase.instance.client;
+  AuthSessionService({
+    SupabaseClient? client,
+    MuulApiClient? apiClient,
+  })  : _client = client ?? Supabase.instance.client,
+        _apiClient = apiClient ?? MuulApiClient(AppConstants.prodApiBaseUrl);
 
   final SupabaseClient _client;
+  final MuulApiClient _apiClient;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   static const _refreshKey = 'muul_refresh_token';
+  static const _accessKey = 'muul_access_token';
 
   User? get currentUser => _client.auth.currentUser;
   Session? get currentSession => _client.auth.currentSession;
@@ -36,9 +45,67 @@ class AuthSessionService {
     await saveSessionTokens();
   }
 
-  Future<void> signUp({required String email, required String password}) async {
+  Future<void> signUp({
+    required String email,
+    required String password,
+    String userType = 'usuario',
+  }) async {
+    // Registrar usuario en Supabase Auth
     await _client.auth.signUp(email: email, password: password);
+    
+    // Actualizar metadata con el tipo de usuario
+    await _client.auth.updateUser(
+      UserAttributes(
+        data: {'tipo': userType},
+      ),
+    );
+    
+    // Refrescar la sesión para obtener JWT actualizado con la metadata
+    final session = _client.auth.currentSession;
+    if (session?.refreshToken != null) {
+      await _client.auth.refreshSession(session!.refreshToken!);
+    }
+    
     await saveSessionTokens();
+  }
+
+  Future<Map<String, dynamic>> signUpViaApi({
+    required String email,
+    required String password,
+    required String nombre,
+    required String tipo,
+    String idioma = 'es',
+  }) async {
+    final response = await _apiClient.registerViaApi(
+      email: email,
+      password: password,
+      nombre: nombre,
+      tipo: tipo,
+      idioma: idioma,
+    );
+    return response;
+  }
+
+  Future<Map<String, dynamic>> signInViaApi({
+    required String email,
+    required String password,
+  }) async {
+    final response = await _apiClient.loginViaApi(
+      email: email,
+      password: password,
+    );
+    
+    // Guardar access token
+    if (response['access_token'] != null) {
+      await _storage.write(key: _accessKey, value: response['access_token']);
+    }
+    
+    // Guardar refresh token
+    if (response['refresh_token'] != null) {
+      await _storage.write(key: _refreshKey, value: response['refresh_token']);
+    }
+    
+    return response;
   }
 
   Future<void> signOut() async {
@@ -54,7 +121,10 @@ class AuthSessionService {
 
   Future<String?> ensureValidAccessToken() async {
     final session = _client.auth.currentSession;
-    if (session == null) return null;
+    if (session == null) {
+      // Intenta obtener del almacenamiento si existe
+      return await _storage.read(key: _accessKey);
+    }
 
     final expiresAt = session.expiresAt;
     if (expiresAt != null) {

@@ -43,6 +43,7 @@ class UserProfile {
     required this.language,
     required this.lastUsernameChangeDate,
     required this.avatarUrl,
+    this.tipo = 'usuario',
   });
 
   final String id;
@@ -51,6 +52,7 @@ class UserProfile {
   final String language;
   final DateTime? lastUsernameChangeDate;
   final String? avatarUrl;
+  final String tipo;
 
   factory UserProfile.fromMap(Map<String, dynamic> map) {
     return UserProfile(
@@ -62,6 +64,7 @@ class UserProfile {
           ? null
           : DateTime.tryParse(map['last_username_change_date'] as String),
       avatarUrl: map['avatar_url'] as String?,
+      tipo: (map['tipo'] as String?) ?? 'usuario',
     );
   }
 }
@@ -69,25 +72,31 @@ class UserProfile {
 class BusinessProfile {
   const BusinessProfile({
     required this.id,
-    required this.businessName,
-    required this.address,
-    required this.language,
-    required this.avatarUrl,
+    required this.nombre,
+    required this.propietarioId,
+    this.descripcion,
+    this.latitud,
+    this.longitud,
+    this.fotoUrl,
   });
 
   final String id;
-  final String businessName;
-  final String address;
-  final String language;
-  final String? avatarUrl;
+  final String nombre;
+  final String propietarioId;
+  final String? descripcion;
+  final double? latitud;
+  final double? longitud;
+  final String? fotoUrl;
 
   factory BusinessProfile.fromMap(Map<String, dynamic> map) {
     return BusinessProfile(
       id: map['id'] as String,
-      businessName: map['business_name'] as String,
-      address: map['address'] as String,
-      language: (map['language'] as String?) ?? 'es-MX',
-      avatarUrl: map['avatar_url'] as String?,
+      nombre: map['nombre'] as String? ?? 'Sin nombre',
+      propietarioId: map['propietario_id'] as String? ?? '',
+      descripcion: map['descripcion'] as String?,
+      latitud: (map['latitud'] as num?)?.toDouble(),
+      longitud: (map['longitud'] as num?)?.toDouble(),
+      fotoUrl: map['foto_url'] as String?,
     );
   }
 }

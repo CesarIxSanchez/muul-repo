@@ -8,9 +8,11 @@ class CompleteProfileScreen extends StatefulWidget {
   const CompleteProfileScreen({
     super.key,
     required this.sessionController,
+    this.userType = 'usuario',
   });
 
   final SessionController sessionController;
+  final String userType;
 
   @override
   State<CompleteProfileScreen> createState() => _CompleteProfileScreenState();
@@ -43,6 +45,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
         username: _usernameCtrl.text,
         gender: _gender,
         language: _language,
+        userType: widget.userType,
       );
       if (!mounted) return;
 

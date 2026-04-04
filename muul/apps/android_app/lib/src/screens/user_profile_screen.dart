@@ -105,14 +105,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final badgeColor = _isBusiness ? const Color(0xFFFFB74D) : const Color(0xFF93D8A7);
     final preferredUsername = _preferredUsernameFromDb(p.username);
     final dbUsernameLine = '@$preferredUsername' == p.username ? null : p.username;
-    final displayName = _isBusiness ? (business?.businessName ?? preferredUsername) : preferredUsername;
-    final businessAvatar = business?.avatarUrl;
+    final displayName = _isBusiness ? (business?.nombre ?? preferredUsername) : preferredUsername;
+    final businessAvatar = business?.fotoUrl;
     final avatarUrl = _isBusiness
       ? ((businessAvatar == null || businessAvatar.isEmpty || businessAvatar.contains('pravatar'))
         ? _businessFallbackAvatar()
         : businessAvatar)
       : (p.avatarUrl ?? 'https://i.pravatar.cc/300?img=12');
-    final languageLabel = _isBusiness ? (business?.language ?? p.language) : p.language;
+    final languageLabel = p.language;
 
     return Scaffold(
       body: MuulBackground(

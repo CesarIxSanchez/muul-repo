@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:data/data.dart';
-import 'package:ui/ui.dart';
 
 class MyBusinessProfileScreen extends StatelessWidget {
   const MyBusinessProfileScreen({super.key});

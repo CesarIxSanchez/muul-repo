@@ -8,9 +8,11 @@ class CompleteBusinessProfileScreen extends StatefulWidget {
   const CompleteBusinessProfileScreen({
     super.key,
     required this.sessionController,
+    this.userType = 'empresa',
   });
 
   final SessionController sessionController;
+  final String userType;
 
   @override
   State<CompleteBusinessProfileScreen> createState() => _CompleteBusinessProfileScreenState();
@@ -40,20 +42,22 @@ class _CompleteBusinessProfileScreenState extends State<CompleteBusinessProfileS
 
     setState(() => _loading = true);
     try {
-      await _service.registerBusiness(
+      // PASO 1: Actualizar el perfil en Supabase con tipo='empresa'
+      await _service.createUserProfile(
+        username: _businessNameCtrl.text,
+        gender: UserGender.notSpecified,
+        language: _language,
+        userType: widget.userType,
+      );
+
+      // PASO 2: Intentar registrar el negocio directamente en Supabase
+      await _service.registerBusinessDirect(
         businessName: _businessNameCtrl.text,
         address: _addressCtrl.text,
         language: _language,
       );
 
-      await _service.createUserProfile(
-        username: _businessNameCtrl.text,
-        gender: UserGender.notSpecified,
-        language: _language,
-      );
-
       if (!mounted) return;
-      // Volver al AuthGate (raíz) – detectará la sesión activa y mostrará MainShell
       Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {
       if (!mounted) return;
