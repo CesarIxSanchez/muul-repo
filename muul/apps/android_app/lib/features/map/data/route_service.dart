@@ -34,15 +34,18 @@ class RouteResult {
 }
 
 class RouteService {
+  // Base URL sin el perfil (lo inyectaremos dinámicamente)
+  static const String baseUrl = 'https://api.mapbox.com/directions/v5/mapbox';
 
   Future<List<RouteResult>> calcularRutas({
     required double origenLat,
     required double origenLng,
     required double destinoLat,
     required double destinoLng,
+    String perfil = 'walking', // 'driving', 'walking', 'cycling'
   }) async {
     final uri = Uri.parse(
-      '${AppConstants.mapboxDirectionsUrl}'
+      '$baseUrl/$perfil'
       '/$origenLng,$origenLat;$destinoLng,$destinoLat'
       '?alternatives=true'
       '&steps=true'
@@ -64,6 +67,7 @@ class RouteService {
     required double origenLat,
     required double origenLng,
     required List<PoiModel> destinos,
+    String perfil = 'walking',
   }) async {
     if (destinos.isEmpty) return ItinerarioResult(etapas: [], ordenPois: []);
 
@@ -80,7 +84,7 @@ class RouteService {
     }
 
     final uri = Uri.parse(
-      '${AppConstants.mapboxDirectionsUrl}'
+      '$baseUrl/$perfil'
       '/${waypoints.toString()}'
       '?steps=true'
       '&language=es'
@@ -116,11 +120,11 @@ class RouteService {
     return ItinerarioResult(etapas: etapas, ordenPois: ordenados);
   }
 
-  // ← DENTRO de la clase
   Future<List<List<double>>> obtenerCoordsItinerario({
     required double origenLat,
     required double origenLng,
     required List<PoiModel> destinos,
+    String perfil = 'walking',
   }) async {
     if (destinos.isEmpty) return [];
 
@@ -131,7 +135,7 @@ class RouteService {
     }
 
     final uri = Uri.parse(
-      '${AppConstants.mapboxDirectionsUrl}'
+      '$baseUrl/$perfil'
       '/${waypoints.toString()}'
       '?geometries=geojson'
       '&overview=full'
@@ -216,7 +220,7 @@ class RouteService {
       instrucciones: instrucciones,
     );
   }
-} // ← cierre de RouteService
+}
 
 class EtapaItinerario {
   final String desde;

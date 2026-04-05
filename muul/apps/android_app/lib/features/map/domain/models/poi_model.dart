@@ -38,17 +38,18 @@ class PoiModel {
     );
   }
 
-  factory PoiModel.fromSupabase(Map<String, dynamic> json) {
-    return PoiModel(
-      id: json['id'].toString(),
-      nombre: json['nombre'] ?? '',
-      categoria: json['categoria'] ?? 'general',
-      descripcion: json['descripcion'] ?? '',
-      latitud: (json['latitud'] as num).toDouble(),
-      longitud: (json['longitud'] as num).toDouble(),
-      horario: json['horario'],
-      foto: json['foto'],
-      verificado: json['verificado'] ?? false,
-    );
-  }
+  factory PoiModel.fromSupabase(Map<String, dynamic> json, {bool esNegocio = false}) {
+      return PoiModel(
+        id: json['id']?.toString() ?? '',
+        nombre: json['nombre'] ?? '',
+        // Asignamos un tipo por defecto si la vista no trae el nombre de la colección
+        categoria: json['categoria'] ?? (esNegocio ? 'tienda' : 'cultura'),
+        // Los negocios tienen 'descripcion', los POIs usan 'contexto_ia' en tu BD
+        descripcion: json['descripcion'] ?? json['contexto_ia'] ?? '',
+        latitud: (json['latitud'] as num?)?.toDouble() ?? 0.0,
+        longitud: (json['longitud'] as num?)?.toDouble() ?? 0.0,
+        // Solo los negocios pueden tener el sello "Muul" (verificado)
+        verificado: esNegocio ? (json['verificado'] ?? false) : false,
+      );
+    }
 }

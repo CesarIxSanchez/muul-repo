@@ -7,7 +7,8 @@ import '../../../../core/services/location_service.dart';
 import '../../data/poi_repository.dart';
 import '../../data/route_service.dart';
 import '../../domain/models/poi_model.dart';
-import '../../../explore/presentation/providers/explore_provider.dart';
+
+// ← ELIMINADO: import de explore_provider que no existía
 
 class MapState {
   final geo.Position? userPosition;
@@ -19,7 +20,9 @@ class MapState {
   final List<PoiModel> pois;
   final bool isLoadingPois;
   final PoiModel? poiSeleccionado;
-  final Set<String> categoriasFiltro;
+
+  final String categoriaActiva;
+  final String searchQuery;
 
   final List<RouteResult> rutasAlternativas;
   final int rutaActivaIndex;
@@ -33,6 +36,8 @@ class MapState {
   final List<PoiModel> searchResults;
   final bool isLoadingSearch;
 
+  final String perfilTransporte;
+
   const MapState({
     this.userPosition,
     this.isLoadingLocation = false,
@@ -42,7 +47,8 @@ class MapState {
     this.pois = const [],
     this.isLoadingPois = false,
     this.poiSeleccionado,
-    this.categoriasFiltro = const {},
+    this.categoriaActiva = '',
+    this.searchQuery = '',
     this.rutasAlternativas = const [],
     this.rutaActivaIndex = 0,
     this.isLoadingRuta = false,
@@ -52,13 +58,26 @@ class MapState {
     this.isLoadingItinerario = false,
     this.searchResults = const [],
     this.isLoadingSearch = false,
+    this.perfilTransporte = 'walking',
   });
 
   List<PoiModel> get poisFiltrados {
-    if (categoriasFiltro.isEmpty) return pois;
-    return pois
-        .where((p) => categoriasFiltro.contains(p.categoria.toLowerCase()))
-        .toList();
+    var list = pois;
+    if (categoriaActiva.isNotEmpty) {
+      list = list
+          .where((p) =>
+              p.categoria.toLowerCase() == categoriaActiva.toLowerCase())
+          .toList();
+    }
+    if (searchQuery.isNotEmpty) {
+      final query = searchQuery.toLowerCase();
+      list = list
+          .where((p) =>
+              p.nombre.toLowerCase().contains(query) ||
+              p.descripcion.toLowerCase().contains(query))
+          .toList();
+    }
+    return list;
   }
 
   MapState copyWith({
@@ -72,7 +91,8 @@ class MapState {
     bool? isLoadingPois,
     PoiModel? poiSeleccionado,
     bool clearPoiSeleccionado = false,
-    Set<String>? categoriasFiltro,
+    String? categoriaActiva,
+    String? searchQuery,
     List<RouteResult>? rutasAlternativas,
     int? rutaActivaIndex,
     bool? isLoadingRuta,
@@ -83,6 +103,7 @@ class MapState {
     bool? isLoadingItinerario,
     List<PoiModel>? searchResults,
     bool? isLoadingSearch,
+    String? perfilTransporte,
   }) {
     return MapState(
       userPosition:        userPosition        ?? this.userPosition,
@@ -93,7 +114,8 @@ class MapState {
       pois:                pois                ?? this.pois,
       isLoadingPois:       isLoadingPois       ?? this.isLoadingPois,
       poiSeleccionado:     clearPoiSeleccionado ? null : (poiSeleccionado ?? this.poiSeleccionado),
-      categoriasFiltro:    categoriasFiltro    ?? this.categoriasFiltro,
+      categoriaActiva:     categoriaActiva     ?? this.categoriaActiva,
+      searchQuery:         searchQuery         ?? this.searchQuery,
       rutasAlternativas:   rutasAlternativas   ?? this.rutasAlternativas,
       rutaActivaIndex:     rutaActivaIndex     ?? this.rutaActivaIndex,
       isLoadingRuta:       isLoadingRuta       ?? this.isLoadingRuta,
@@ -103,6 +125,7 @@ class MapState {
       isLoadingItinerario: isLoadingItinerario ?? this.isLoadingItinerario,
       searchResults:       searchResults       ?? this.searchResults,
       isLoadingSearch:     isLoadingSearch     ?? this.isLoadingSearch,
+      perfilTransporte:    perfilTransporte    ?? this.perfilTransporte,
     );
   }
 }
@@ -112,28 +135,7 @@ class MapNotifier extends AsyncNotifier<MapState> {
   final _routeSvc = RouteService();
 
   @override
-  Future<MapState> build() async {
-    // Escuchar cambios en los POIs filtrados para actualizar el mapa reactivamente
-    ref.listen(filteredPoisProvider, (prev, next) {
-      next.whenData((places) {
-        final mapPois = places.map((p) => PoiModel(
-          id: p.id,
-          nombre: p.name,
-          categoria: p.category,
-          descripcion: p.description,
-          latitud: p.latitude,
-          longitud: p.longitude,
-          verificado: p.isVerified,
-        )).toList();
-
-        state = AsyncData(state.value?.copyWith(
-          pois: mapPois,
-        ) ?? MapState(pois: mapPois));
-      });
-    });
-
-    return const MapState();
-  }
+  Future<MapState> build() async => const MapState();
 
   Future<void> onMapCreated(MapboxMap controller) async {
     state = AsyncData(state.value!.copyWith(
@@ -163,49 +165,35 @@ class MapNotifier extends AsyncNotifier<MapState> {
 
   Future<void> fetchPoisCercanos() async {
     final s = state.value ?? const MapState();
+    if (s.userPosition == null) return;
     state = AsyncData(s.copyWith(isLoadingPois: true));
-    
     try {
-      // 1. Obtenemos los POIs desde los filtros globales
-      final poisAsync = ref.read(filteredPoisProvider);
-      
-      poisAsync.whenData((places) {
-        // 2. Convertimos los modelos de 'data' package a 'PoiModel' del mapa
-        final mapPois = places.map((p) => PoiModel(
-          id: p.id,
-          nombre: p.name,
-          categoria: p.category,
-          descripcion: p.description,
-          latitud: p.latitude,
-          longitud: p.longitude,
-          verificado: p.isVerified,
-        )).toList();
-
-        state = AsyncData(state.value!.copyWith(
-          pois: mapPois, 
-          isLoadingPois: false
-        ));
-      });
+      final mapPois = await _poiRepo.fetchTodosPois(
+        lat: s.userPosition!.latitude,
+        lng: s.userPosition!.longitude,
+      );
+      state = AsyncData(state.value!.copyWith(
+        pois: mapPois, isLoadingPois: false,
+      ));
     } catch (_) {
       state = AsyncData(state.value!.copyWith(isLoadingPois: false));
     }
   }
 
-  void toggleFiltro(String categoria) {
-    final s = state.value!;
-    final filtros = Set<String>.from(s.categoriasFiltro);
-    if (filtros.contains(categoria)) {
-      filtros.remove(categoria);
-    } else {
-      filtros.add(categoria);
-    }
-    state = AsyncData(s.copyWith(categoriasFiltro: filtros));
+  // ── Filtros ───────────────────────────────────────────────────────────────
+
+  void filtrarPorCategoria(String categoria) {
+    // Toggle: si ya está activa, la quita
+    final nueva = state.value?.categoriaActiva == categoria ? '' : categoria;
+    state = AsyncData(state.value!.copyWith(categoriaActiva: nueva));
   }
 
-  void limpiarFiltros() {
-    state = AsyncData(state.value!.copyWith(categoriasFiltro: {}));
+  // Filtra localmente los POIs ya cargados por nombre/descripción
+  void buscarPoi(String query) {
+    state = AsyncData(state.value!.copyWith(searchQuery: query));
   }
 
+  // Busca en Mapbox API (lugares globales con autocomplete)
   Future<void> buscar(String query) async {
     if (query.trim().isEmpty) {
       state = AsyncData(state.value!.copyWith(searchResults: []));
@@ -227,6 +215,8 @@ class MapNotifier extends AsyncNotifier<MapState> {
     state = AsyncData(state.value!.copyWith(searchResults: []));
   }
 
+  // ── POIs ──────────────────────────────────────────────────────────────────
+
   void seleccionarPoi(PoiModel poi) =>
       state = AsyncData(state.value!.copyWith(poiSeleccionado: poi));
 
@@ -239,13 +229,27 @@ class MapNotifier extends AsyncNotifier<MapState> {
     final idx = lista.indexWhere((p) => p.id == poi.id);
     if (idx >= 0) {
       lista.removeAt(idx);
-      poi.seleccionado = false;
+      // ← CORREGIDO: ya no mutamos el modelo directamente
     } else {
-      poi.seleccionado = true;
       lista.add(poi);
     }
     state = AsyncData(s.copyWith(poisParaItinerario: lista));
   }
+
+  // ── Transporte ────────────────────────────────────────────────────────────
+
+  // ← CORREGIDO: captura s antes de cambiar state
+  void cambiarTransporte(String perfil) {
+    final s = state.value!;
+    state = AsyncData(s.copyWith(perfilTransporte: perfil));
+    if (s.itinerario != null) {
+      calcularItinerario();
+    } else if (s.rutasAlternativas.isNotEmpty && s.poiSeleccionado != null) {
+      calcularRutaAPoi(s.poiSeleccionado!);
+    }
+  }
+
+  // ── Rutas ─────────────────────────────────────────────────────────────────
 
   Future<void> calcularRutaAPoi(PoiModel destino) async {
     final s = state.value!;
@@ -256,6 +260,7 @@ class MapNotifier extends AsyncNotifier<MapState> {
       origenLng: s.userPosition!.longitude,
       destinoLat: destino.latitud,
       destinoLng: destino.longitud,
+      perfil: s.perfilTransporte,
     );
     state = AsyncData((state.value ?? const MapState()).copyWith(
       rutasAlternativas: rutas,
@@ -273,12 +278,14 @@ class MapNotifier extends AsyncNotifier<MapState> {
       origenLat: s.userPosition!.latitude,
       origenLng: s.userPosition!.longitude,
       destinos: s.poisParaItinerario,
+      perfil: s.perfilTransporte,
     );
 
     final coords = await _routeSvc.obtenerCoordsItinerario(
       origenLat: s.userPosition!.latitude,
       origenLng: s.userPosition!.longitude,
       destinos: resultado.ordenPois,
+      perfil: s.perfilTransporte,
     );
 
     state = AsyncData((state.value ?? const MapState()).copyWith(
@@ -300,6 +307,8 @@ class MapNotifier extends AsyncNotifier<MapState> {
     ));
   }
 
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
   Future<void> _centerMapOnUser(
     geo.Position pos,
     MapboxMap? ctrl,
@@ -307,9 +316,7 @@ class MapNotifier extends AsyncNotifier<MapState> {
     if (ctrl == null) return;
     await ctrl.flyTo(
       CameraOptions(
-        center: Point(
-          coordinates: Position(pos.longitude, pos.latitude),
-        ),
+        center: Point(coordinates: Position(pos.longitude, pos.latitude)),
         zoom: 15.0,
       ),
       MapAnimationOptions(duration: 1200, startDelay: 0),
