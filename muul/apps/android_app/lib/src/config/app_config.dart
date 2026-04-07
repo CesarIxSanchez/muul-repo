@@ -9,8 +9,16 @@ class AppConfig {
     return String.fromEnvironment(key, defaultValue: fallback).trim();
   }
 
-  static String get supabaseUrl => _value('SUPABASE_URL');
-  static String get supabaseAnonKey => _value('SUPABASE_ANON_KEY');
+  static String get supabaseUrl => _value(
+        'SUPABASE_URL',
+        fallback: 'https://qewqnirwuptcudoflgkd.supabase.co',
+      );
+
+  static String get supabaseAnonKey => _value(
+        'SUPABASE_ANON_KEY',
+        fallback:
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFld3FuaXJ3dXB0Y3Vkb2ZsZ2tkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4Mzg1NjQsImV4cCI6MjA5MDQxNDU2NH0.5rUOin2SZlq-fRpWqr4Vzd97iI4JDca3-Zl7N3qy6lc',
+      );
   static bool get useProdApi {
     final raw = _value('USE_PROD_API', fallback: 'true').toLowerCase();
     return raw == 'true' || raw == '1' || raw == 'yes';

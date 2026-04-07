@@ -168,15 +168,15 @@ class _RegisterAccountScreenState extends State<RegisterAccountScreen> {
                 obscureText: _obscurePassword,
                 onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
-                  labelText: 'Contrasena',
+                  labelText: 'Contraseña',
                   suffixIcon: IconButton(
                     onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                     icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
                   ),
                 ),
                 validator: (value) {
-                  if ((value ?? '').isEmpty) return 'Ingresa una contrasena';
-                  if (!_passwordIsStrong) return 'Tu contrasena no cumple los requisitos';
+                  if ((value ?? '').isEmpty) return 'Ingresa una contraseña';
+                  if (!_passwordIsStrong) return 'Tu contraseña no cumple los requisitos';
                   return null;
                 },
               ),
@@ -186,21 +186,21 @@ class _RegisterAccountScreenState extends State<RegisterAccountScreen> {
                 obscureText: _obscureConfirm,
                 onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
-                  labelText: 'Confirmar contrasena',
+                  labelText: 'Confirmar contraseña',
                   suffixIcon: IconButton(
                     onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
                     icon: Icon(_obscureConfirm ? Icons.visibility : Icons.visibility_off),
                   ),
                 ),
                 validator: (value) {
-                  if ((value ?? '').isEmpty) return 'Confirma tu contrasena';
-                  if (value != _passwordCtrl.text) return 'Las contrasenas no coinciden';
+                  if ((value ?? '').isEmpty) return 'Confirma tu contraseña';
+                  if (value != _passwordCtrl.text) return 'Las contraseñas no coinciden';
                   return null;
                 },
               ),
               const SizedBox(height: 8),
               Text(
-                'Seguridad de contrasena',
+                'Seguridad de contraseña',
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: const Color(0xFFA1A8B8),
                       letterSpacing: 0.6,
@@ -213,23 +213,23 @@ class _RegisterAccountScreenState extends State<RegisterAccountScreen> {
               ),
               _ruleLine(
                 ok: _hasUppercase,
-                okText: 'Incluye mayuscula',
-                failText: 'Falta una mayuscula',
+                okText: 'Incluye mayúscula',
+                failText: 'Falta una mayúscula ',
               ),
               _ruleLine(
                 ok: _hasNumber,
-                okText: 'Incluye numero',
-                failText: 'Falta un numero',
+                okText: 'Incluye número',
+                failText: 'Falta un número',
               ),
               _ruleLine(
                 ok: _hasSymbol,
-                okText: 'Incluye simbolo',
-                failText: 'Simbolo faltante',
+                okText: 'Incluye símbolo',
+                failText: 'Símbolo faltante',
               ),
               _ruleLine(
                 ok: _passwordsMatch,
-                okText: 'Contrasenas coinciden',
-                failText: 'Las contrasenas no coinciden',
+                okText: 'Contraseñas coinciden',
+                failText: 'Las contraseñas no coinciden',
               ),
               const SizedBox(height: 32),
               FilledButton(

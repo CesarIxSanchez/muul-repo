@@ -79,7 +79,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           children: [
             TextField(
               controller: _usernameCtrl,
-              decoration: const InputDecoration(labelText: 'Username'),
+              decoration: const InputDecoration(labelText: 'Nombre'),
             ),
             if (!widget.isBusiness) ...[
               const SizedBox(height: 12),

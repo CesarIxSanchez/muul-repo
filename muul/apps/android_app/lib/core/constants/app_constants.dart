@@ -3,7 +3,7 @@ import 'env.dart';
 
 class AppConstants {
   // ── Mapbox ──────────────────────────────────────────────────
-  static const String mapboxToken = mapboxPublicToken;
+  static String get mapboxToken => mapboxPublicToken;
 
   static const String mapboxStyleDark =
       'mapbox://styles/mapbox/dark-v11';
@@ -15,8 +15,8 @@ class AppConstants {
       'https://api.mapbox.com/search/searchbox/v1/category';
 
   // ── Supabase ─────────────────────────────────────────────────
-  static const String supabaseUrl = supabaseUrlEnv;
-  static const String supabaseAnonKey = supabaseAnonKeyEnv;
+  static String get supabaseUrl => supabaseUrlEnv;
+  static String get supabaseAnonKey => supabaseAnonKeyEnv;
 
   // ── API Real de Vercel (opcional) ─────────────────────────────
   static const String prodApiBaseUrl = 'https://muul-api.vercel.app/api/v1';
